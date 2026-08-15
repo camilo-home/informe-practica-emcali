@@ -1,0 +1,54 @@
+\documentclass[12pt]{report}
+%\documentclass[14pt]{extreport}
+%documentclass[12pt]{book}
+\usepackage{titlesec}
+\usepackage{UVconfig}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Permite usar los comandos \AU{texto} para dar color al texto. También para \Di{texto}. 
+\usepackage{color}
+\newcommand{\JP}[1]{\textcolor{blue}{[JP: #1]}}
+\newcommand{\HL}[1]{\textcolor{red}{[HL: #1]}}
+\newcommand{\CC}{\cellcolor{lightgray}}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Use este espacio para agregar paquetes extra.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Final del preambulo
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Inicio del documento
+\begin{document}
+
+\include{Varios/contenido_portada}
+%\include{Varios/portada0}
+\include{Varios/portada1}
+\include{Varios/Tabla_de_contenido}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+% Numeracion a partir del contenido
+\pagenumbering{arabic} % Arabic numerals
+\setcounter{page}{1}
+
+%---------------------------------------------
+%CAPITULOS
+%---------------------------------------------
+\include{Capitulos/Cap_0_Introduccion}
+\include{Capitulos/Cap_1_Marco_Teorico}
+\include{Capitulos/Cap_2_Contexto}
+\include{Capitulos/Cap_3_Objetivos}
+%\include{Tablas/Cronograma}
+
+\include{Referencias/bibliografia}
+%\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% En caso de necesitar agregar apéndices, habilite el siguiente comando.
+%\include{data/appendices}
+%\appendix
+%\input{data/apendice2.tex}
+\end{document}

@@ -1,0 +1,24 @@
+INFORME TÉCNICO
+Implementación de una plataforma SIEM para monitoreo
+y correlación de eventos de seguridad
+
+1. Introducción
+2. Contexto y problemática
+3. Objetivos
+4. Arquitectura de la solución
+5. Tecnologías utilizadas
+6. Implementación de la infraestructura
+7. Implementación de syslog-ng
+8. Integración con Wazuh
+9. Integración de equipos de red
+10. Normalización y procesamiento de logs
+11. Reglas y detección de eventos
+12. Alertas y respuesta activa
+13. Dashboards y visualización
+14. Pruebas y resultados
+15. Problemas encontrados y soluciones
+16. Consideraciones de seguridad
+17. Trabajo futuro
+18. Conclusiones
+19. Referencias
+20. Anexos

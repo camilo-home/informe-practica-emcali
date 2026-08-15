@@ -1,0 +1,19 @@
+\chapter{MARCO TEORICO}
+\section{Registros de eventos (logs)}
+Los registros de eventos, comúnmente denominados \textit{logs}, son registros cronologicos generados por sistemas informáticos, aplicaciones, servidores y dispositivos de red como resultado de las diferentes actividades que se llevan a cabo durante su operación. Estos registros permiten conservar información sobre acontecimientos importantes del sistema, proporcionando evidencia sobre su funcionamiento, cambios de estado, errores y accesos.
+
+La información contenida en un registro depende de la aplicación o dispositivo que lo genera. Sin embargo, generalmente un evento puede contener elementos como una marca temporal, la identificación del dispositivo o sistema que lo generó, el proceso o servicio asociado, un nivel de severidad y una descripción del acontecimiento. La combinación de estos elementos permite establecer el contexto en el que ocurrió un evento y facilita su posterior análisis. Sin embargo, los distintos fabricantes y aplicaciones pueden seguir formatos de registro propios a pesar de que existen estandares establecidos, por esta razon no es posible categorizar el origen de los registros de eventos de manera uniforme.
+
+Afortunadamente, todos estos eventos pueden categorizarse por niveles de severidad, que van desde información general hasta errores críticos que requieren atención inmediata. La correcta gestión y análisis de los registros de eventos es fundamental para la administración de sistemas, la resolución de problemas, la auditoría de seguridad y el cumplimiento de normativas y regulaciones.
+
+\section{Protocolo Syslog}
+Syslog es un estándar para el envío de mensajes de registro en una red informática IP. Por syslog se conoce tanto al protocolo de red como a la aplicación o biblioteca que envía los mensajes de registro.
+
+\subsection{Estructura de los mensajes}
+El protocolo establece una estructura para representar información relacionada con un evento, permitiendo incluir elementos que facilitan su identificación y clasificación, como su nivel de prioridad, la fuente que lo genera, una marca temporal y el contenido del mensaje. De esta manera, Syslog proporciona un mecanismo común para el intercambio de información de registro entre diferentes componentes de un sistema. Entre las especificaciones más relevantes se encuentran el formato tradicional descrito en RFC 3164 y el formato definido posteriormente en RFC 5424, los cuales presentan diferencias tanto en la organización como en el nivel de estructuración de sus campos.
+
+\section{Syslog-ng}
+\section{Sistemas de Gestión de Información y Eventos de Seguridad (SIEM)}
+\section{Wazuh}
+\section{Correlación de eventos}
+\section{Detección y respuesta ante incidentes}
