@@ -1,0 +1,47 @@
+\begin{longtable}{p{3cm} p{3cm} p{10cm}}
+    \caption{Campos de un mensaje Syslog según RFC 3164}
+    \label{tab:campos-rfc3164} \\
+
+    \toprule
+    \textbf{Campo} & \textbf{Valor} & \textbf{Descripción} \\
+    \midrule
+    \endfirsthead
+
+    \multicolumn{3}{c}{\textit{Tabla \thetable. Continuación}} \\
+    \toprule
+    \textbf{Campo} & \textbf{Valor} & \textbf{Descripción} \\
+    \midrule
+    \endhead
+
+    \midrule
+    \multicolumn{3}{r}{\textit{Continúa en la siguiente página}} \\
+    \endfoot
+
+    \bottomrule
+    \endlastfoot
+
+    \texttt{PRI} &
+    \texttt{<34>} &
+    Indica la prioridad del mensaje y está compuesto por los valores de Facility y Severity. \\
+
+    \texttt{TIMESTAMP} &
+    \texttt{Oct 11 22:14:15} &
+    Indica la fecha y hora en que se generó el evento. Utiliza el formato de mes, día, hora, minutos y segundos. \\
+
+    \texttt{HOSTNAME} &
+    \texttt{myhost} &
+    Identifica el sistema o dispositivo que originó el mensaje. \\
+
+    \texttt{TAG} &
+    \texttt{su} &
+    Permite identificar la aplicación o proceso asociado con la generación del mensaje. \\
+
+    \texttt{PID} &
+    \texttt{[1234]} &
+    Identifica el proceso que generó el evento cuando el sistema emisor proporciona esta información. \\
+
+    \texttt{MSG} &
+    \texttt{'su root' failed for jdoe on /dev/pts/2} &
+    Contiene la información específica del evento generado por la aplicación o dispositivo. \\
+
+\end{longtable}

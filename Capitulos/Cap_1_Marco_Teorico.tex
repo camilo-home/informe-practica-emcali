@@ -24,8 +24,29 @@ El protocolo establece una estructura para representar información relacionada 
 
 Entre las especificaciones más relevantes se encuentran el formato tradicional descrito en RFC 3164 y el formato definido posteriormente en RFC 5424, los cuales presentan diferencias tanto en la organización como en el nivel de estructuración de sus campos.
 
+\subsubsection{Priority (PRI)}
+El campo PRI, abreviatura de \textit{Priority}, es un elemento fundamental en la estructura de los mensajes Syslog, ya que representa la prioridad asignada a un mensaje y permite identificar tanto la categoría de origen del evento como su nivel de severidad. Este campo se encuentra al inicio del mensaje y se representa mediante un valor numérico encerrado entre los caracteres < y >.
+
+El valor contenido dentro de PRI se obtiene mediante la combinación de dos componentes: Facility y Severity. El cálculo está definido mediante la expresión:
+
+\begin{equation}
+    PRI = (Facility \times 8) + Severity
+\end{equation}
+
+donde Facility identifica la categoría o subsistema que generó el mensaje, mientras que Severity representa la importancia o gravedad del evento.
+
+\subsubsection{Facility}
+El campo Facility permite clasificar el origen lógico del mensaje. Cada valor de Facility corresponde a un subsistema o componente específico del sistema que genera el evento:
+
+\input{Tablas/Facility}
+
+\subsubsection{Severity}
+El campo Severity, también conocido como nivel de severidad, indica la importancia o gravedad del evento registrado. Este campo permite a los administradores y sistemas de monitoreo priorizar la atención a los eventos según su criticidad, facilitando la identificación de problemas que requieren intervención inmediata frente a aquellos que son meramente informativos o de menor relevancia.
+
+\input{Tablas/Severity.tex}
+
 \subsubsection{RFC 3164}
-El documento RFC 3164, denominado The BSD Syslog Protocol, describe una especificación para el formato de mensajes, basada en la implementación tradicional utilizada en sistemas BSD.
+El documento RFC 3164, denominado The BSD Syslog Protocol, publicado en 2001 por el IETF, describe una especificación para el formato de mensajes, basada en la implementación tradicional utilizada en sistemas BSD.
 
 Utiliza un formato básico con codificación ASCII, no incluye año ni zona horaria en las marcas de tiempo y tiene un límite de 1024 bytes por mensaje. Ideal para sistemas heredados o configuraciones pequeñas.
 
@@ -40,43 +61,7 @@ La estructura de un mensaje RFC 3164 puede representarse conceptualmente como:
 
 La siguiente tabla describe los campos que componen un mensaje Syslog bajo este estandar.
 
-\begin{table}[H]
-    \small
-    \centering
-    \caption{Campos de un mensaje Syslog según RFC 3164}
-    \label{tab:campos-rfc3164}
-    \begin{tabular}{p{3cm} p{3cm} p{9.5cm}}
-        \toprule
-        \textbf{Campo} & \textbf{Valor} & \textbf{Descripción} \\
-        \midrule
-        
-        PRI &
-        \texttt{<34>} &
-        Indica la prioridad del mensaje y está compuesto por los valores de Facility y Severity. \\
-        
-        TIMESTAMP &
-        \texttt{Oct 11 22:14:15} &
-        Indica la fecha y hora en que se generó el evento. Utiliza el formato de mes, día, hora, minutos y segundos. \\
-        
-        HOSTNAME &
-        \texttt{myhost} &
-        Identifica el sistema o dispositivo que originó el mensaje. \\
-        
-        TAG &
-        \texttt{su} &
-        Permite identificar la aplicación o proceso asociado con la generación del mensaje. \\
-        
-        PID &
-        \texttt{[1234]} &
-        Identifica el proceso que generó el evento cuando el sistema emisor proporciona esta información. \\
-        
-        MSG &
-        \texttt{'su root' failed for jdoe on /dev/pts/2} &
-        Contiene la información específica del evento generado por la aplicación o dispositivo. \\
-        
-        \bottomrule
-    \end{tabular}
-\end{table}
+\input{Tablas/rfc3164.tex}
 
 Una característica importante de RFC 3164 es que no define un esquema rígido para el contenido del campo MSG. El significado y formato de esta parte depende de la aplicación o dispositivo que genera el evento. Esto permite una gran flexibilidad, pero también introduce variabilidad entre fabricantes y sistemas.
 
@@ -85,9 +70,16 @@ A nivel de transporte, RFC 3164 contempla principalmente el uso de UDP, particul
 Su diseño sencillo puede presentar dificultades en los entornos informáticos modernos. Por ejemplo, su formato de marca de tiempo carece de año y zona horaria, lo que puede generar confusión al correlacionar registros entre sistemas o durante investigaciones que abarcan varios periodos de tiempo. Actualente este estandar esta considerado como obsoleto y fue reemplazado formalmente por el estándar más completo RFC 5424, aunque sigue activo en algunos equipos y redes pequeñas.
 
 \subsubsection{RFC 5424}
-El RFC 5424, denominado The Syslog Protocol, fue publicado por el IETF en marzo de 2009, define un formato estandarizado para los mensajes del protocolo syslog. Su principal objetivo es proporcionar una estructura más precisa y extensible que la definida previamente por RFC 3164, estableciendo formalmente la estructura del mensaje y definiendo campos adicionales que permiten transportar información contextual de manera estructurada.
+El RFC 5424, denominado The Syslog Protocol, fue publicado por el IETF en marzo de 2009, define un formato estandarizado para los mensajes del protocolo syslog. Su principal objetivo es proporcionar una estructura más precisa y extensible que la definida previamente por RFC 3164, algunas de las mejoras introducidas que buscan abordar las limitaciones son las siguientes:
 
-Una diferencia importante es que RFC 5424 separa claramente los diferentes componentes del mensaje como se muestra en el siguiente esquema:
+\begin{itemize}
+    \item RFC 5424 mejora considerablemente la representación temporal de los mensajes al incluir el año, la zona horaria y la posibilidad de registrar fracciones de segundo. Esto permite una mayor precisión en la marca temporal y facilita la correlación de eventos entre sistemas distribuidos.
+    \item Introduce el campo STRUCTURED-DATA, lo que permite incorporar información estructurada dentro del mensaje. Esto hace posible que información que antes tendría que estar embebida en texto libre pueda representarse explícitamente como atributos.
+    \item RFC 5424 utiliza $"-"$ como NILVALUE, es decir, indica que un determinado campo no tiene valor disponible. Esto facilita la interpretación de los mensajes y permite una mayor consistencia en la representación de datos faltantes.
+\end{itemize}
+
+
+La estructura de un mensaje RFC 5424 puede representarse conceptualmente como:
 
 \begin{figure}[H]
     \centering
@@ -95,6 +87,10 @@ Una diferencia importante es que RFC 5424 separa claramente los diferentes compo
     \caption{Estructura de un mensaje RFC 5424}
     \label{fig:rfc5424}
 \end{figure}
+
+La siguiente tabla describe los campos que componen un mensaje Syslog bajo este estandar.
+
+\input{Tablas/rfc5424.tex}
 
 \section{Syslog-ng}
 \section{Sistemas de Gestión de Información y Eventos de Seguridad (SIEM)}

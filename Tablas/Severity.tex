@@ -1,0 +1,47 @@
+\begin{longtable}{p{2.0cm} p{4.0cm} p{9.0cm}}
+    \caption{Niveles de Severity en Syslog}
+    \label{tab:syslog_severity} \\
+
+    \toprule
+    \textbf{Valor} & \textbf{Severity} & \textbf{Descripción} \\
+    \midrule
+    \endfirsthead
+
+    \multicolumn{3}{c}{\textit{Tabla \thetable. Continuación}} \\
+    \toprule
+    \textbf{Valor} & \textbf{Severity} & \textbf{Descripción} \\
+    \midrule
+    \endhead
+
+    \midrule
+    \multicolumn{3}{r}{\textit{Continúa en la siguiente página}} \\
+    \endfoot
+
+    \bottomrule
+    \endlastfoot
+
+    0 & \texttt{Emergency} &
+    El sistema no puede utilizarse. Representa el nivel de mayor severidad. \\
+
+    1 & \texttt{Alert} &
+    Se requiere una acción inmediata para corregir la condición presentada. \\
+
+    2 & \texttt{Critical} &
+    Condición crítica que requiere atención inmediata y puede comprometer el funcionamiento del sistema. \\
+
+    3 & \texttt{Error} &
+    Se ha producido una condición de error que afecta el funcionamiento de un componente. \\
+
+    4 & \texttt{Warning} &
+    Se presenta una condición de advertencia que puede requerir atención. \\
+
+    5 & \texttt{Notice} &
+    Evento normal pero significativo que merece ser registrado. \\
+
+    6 & \texttt{Informational} &
+    Mensaje informativo sobre el funcionamiento o estado del sistema. \\
+
+    7 & \texttt{Debug} &
+    Información detallada utilizada principalmente para depuración y diagnóstico.
+
+\end{longtable}

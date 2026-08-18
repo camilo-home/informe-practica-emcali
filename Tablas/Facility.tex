@@ -1,0 +1,73 @@
+\begin{longtable}{p{2.0cm} p{4.0cm} p{9.0cm}}
+    \caption{Valores de Facility en Syslog}
+    \label{tab:syslog_facility} \\
+
+    \toprule
+    \textbf{Valor} & \textbf{Facility} & \textbf{Descripción} \\
+    \midrule
+    \endfirsthead
+
+    \multicolumn{3}{c}{\textit{Tabla \thetable. Continuación}} \\
+    \toprule
+    \textbf{Valor} & \textbf{Facility} & \textbf{Descripción} \\
+    \midrule
+    \endhead
+
+    \midrule
+    \multicolumn{3}{r}{\textit{Continúa en la siguiente página}} \\
+    \endfoot
+
+    \bottomrule
+    \endlastfoot
+
+    0 & \texttt{kern} &
+    Mensajes generados por el kernel del sistema. \\
+
+    1 & \texttt{user} &
+    Mensajes generados por procesos o aplicaciones a nivel de usuario. \\
+
+    2 & \texttt{mail} &
+    Mensajes relacionados con el sistema de correo. \\
+
+    3 & \texttt{daemon} &
+    Mensajes generados por procesos del sistema ejecutados como demonios. \\
+
+    4 & \texttt{auth} &
+    Mensajes relacionados con procesos de autenticación. \\
+
+    5 & \texttt{syslog} &
+    Mensajes generados internamente por el propio sistema Syslog. \\
+
+    6 & \texttt{lpr} &
+    Mensajes relacionados con el sistema de impresión. \\
+
+    7 & \texttt{news} &
+    Mensajes relacionados con el sistema de noticias de red. \\
+
+    8 & \texttt{uucp} &
+    Mensajes relacionados con el protocolo UUCP. \\
+
+    9 & \texttt{cron} &
+    Mensajes relacionados con procesos de planificación de tareas. \\
+
+    10 & \texttt{authpriv} &
+    Mensajes relacionados con autenticación que contienen información privada. \\
+
+    11 & \texttt{ftp} &
+    Mensajes relacionados con el servicio FTP. \\
+
+    12 & \texttt{ntp} &
+    Mensajes relacionados con el protocolo NTP. \\
+
+    13 & \texttt{security} &
+    Mensajes relacionados con auditoría y seguridad. \\
+
+    14 & \texttt{console} &
+    Mensajes asociados con el uso de la consola. \\
+
+    15 & \texttt{solaris-cron} &
+    Mensajes relacionados con el planificador de tareas de Solaris. \\
+
+    16 -- 23 & \texttt{local0 - local7} &
+     Facilities reservadas para uso local y aplicaciones específicas. \\
+\end{longtable}
