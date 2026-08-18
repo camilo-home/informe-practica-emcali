@@ -18,7 +18,7 @@
     \setstretch{1.2}
 }
 
-\setlength{\parskip}{\baselineskip}
+\setlength{\parskip}{0.5\baselineskip}
 
 
 % Figuras y tablas
@@ -28,6 +28,7 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{enumitem}
+\usepackage{listings}
 
 % Matemáticas
 \usepackage{physics}
@@ -118,7 +119,7 @@
     {5em}
     {2em}
 
-\titleformat{\section}{\normalsize\bf}{\thesection}{1.5em}{}
+\titleformat{\section}{\normalsize\bf}{\thesection}{1.5em}{\MakeUppercase}
 \titlespacing*{\section}
     {0em}
     {0em}
@@ -234,3 +235,24 @@
 %\setlength{\floatsep}{40pt plus 8.0pt minus 4.0pt}
 %\setlength{\intextsep}{10pt plus 8.0pt minus 4.0pt}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Formateo de estilo especifico para logs de listings
+\lstdefinestyle{logstyle}{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    numbers=none,
+    xleftmargin=2cm,
+    xrightmargin=2cm,
+    aboveskip=15pt,
+    belowskip=0pt
+}
+
+\renewcommand{\lstlistingname}{Ejemplo}
+
+% Formateo de tamaño de fuente para captions de figuras y tablas
+\captionsetup{
+    font=small
+}
