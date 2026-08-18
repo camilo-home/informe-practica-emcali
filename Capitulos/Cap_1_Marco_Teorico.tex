@@ -46,7 +46,7 @@ El campo Severity, también conocido como nivel de severidad, indica la importan
 \input{Tablas/Severity.tex}
 
 \subsubsection{RFC 3164}
-El documento RFC 3164, denominado The BSD Syslog Protocol, publicado en 2001 por el IETF, describe una especificación para el formato de mensajes, basada en la implementación tradicional utilizada en sistemas BSD.
+El documento RFC 3164, denominado The BSD Syslog Protocol, publicado en 2001 por el IETF, describe una especificación para el formato de mensajes, basada en la implementación tradicional utilizada en sistemas BSD \cite{rfc3164}.
 
 Utiliza un formato básico con codificación ASCII, no incluye año ni zona horaria en las marcas de tiempo y tiene un límite de 1024 bytes por mensaje. Ideal para sistemas heredados o configuraciones pequeñas.
 
@@ -70,7 +70,7 @@ A nivel de transporte, RFC 3164 contempla principalmente el uso de UDP, particul
 Su diseño sencillo puede presentar dificultades en los entornos informáticos modernos. Por ejemplo, su formato de marca de tiempo carece de año y zona horaria, lo que puede generar confusión al correlacionar registros entre sistemas o durante investigaciones que abarcan varios periodos de tiempo. Actualente este estandar esta considerado como obsoleto y fue reemplazado formalmente por el estándar más completo RFC 5424, aunque sigue activo en algunos equipos y redes pequeñas.
 
 \subsubsection{RFC 5424}
-El RFC 5424, denominado The Syslog Protocol, fue publicado por el IETF en marzo de 2009, define un formato estandarizado para los mensajes del protocolo syslog. Su principal objetivo es proporcionar una estructura más precisa y extensible que la definida previamente por RFC 3164, algunas de las mejoras introducidas que buscan abordar las limitaciones son las siguientes:
+El RFC 5424, denominado The Syslog Protocol, fue publicado por el IETF en marzo de 2009, define un formato estandarizado para los mensajes del protocolo syslog \cite{rfc5424}. Su principal objetivo es proporcionar una estructura más precisa y extensible que la definida previamente por RFC 3164, algunas de las mejoras introducidas que buscan abordar las limitaciones son las siguientes:
 
 \begin{itemize}
     \item RFC 5424 mejora considerablemente la representación temporal de los mensajes al incluir el año, la zona horaria y la posibilidad de registrar fracciones de segundo. Esto permite una mayor precisión en la marca temporal y facilita la correlación de eventos entre sistemas distribuidos.
