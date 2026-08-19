@@ -257,9 +257,51 @@ log {
 
 En este caso, los mensajes recibidos mediante \texttt{s\_network} son evaluados por el filtro \texttt{f\_auth}. Aquellos que cumplen la condición establecida son enviados posteriormente hacia \texttt{d\_wazuh}.
 
-Los log paths constituyen, por tanto, el mecanismo mediante el cual los diferentes componentes de syslog-ng se integran para construir el flujo de procesamiento de los registros.
+Los log paths describen el como los diferentes componentes de syslog-ng se integran para construir el flujo de procesamiento de los registros.
 
 \section{Sistemas de Gestión de Información y Eventos de Seguridad (SIEM)}
+Un SIEM (Security Information and Event Management, o Gestión de Información y Eventos de Seguridad) es una plataforma que recopila, centraliza y analiza registros de actividad (logs) y alertas de toda una infraestructura de red para detectar ciberamenazas en tiempo real \cite{microsoft_siem}.
+
+En principio, su funcionamiento se basa en juntar datos de servidores, redes, aplicaciones y dispositivos, luego analizarlos correlacionando eventos individuales que por si solos podrian parecer normales, pero que, al compararlos temporalmente y en conjunto entre distintos equipos, pueden indicar un comportamiento anómalo o una amenaza de seguridad. En estos casos la plataforma avisa al equipo de seguridad (SOC) o realiza acciones automáticas de mitigación.
+
+Este tipo de sistemas tambien facilitan la representacion de estadisticas mediante esquemas visuales de la actividad de la red, lo que permite a los administradores y equipos de seguridad identificar patrones y tendencias. De igual manera, ayuda a cumplir normas de protección de datos al guardar historiales de actividad y generar reportes de auditoría.
+
 \section{Wazuh}
+Wazuh es una plataforma de seguridad de código abierto orientada a la detección, análisis y respuesta ante eventos de seguridad en infraestructuras informáticas, ademas, la plataforma integra funcionalidades asociadas a SIEM y XDR y permite recopilar información proveniente de cualquier fuente de registros de eventos, incluyendo servidores, aplicaciones, dispositivos de red y sistemas operativos. Su arquitectura distribuida permite desplegar agentes en los sistemas monitorizados, los cuales recopilan información y la envían a un servidor central para su análisis y correlación.
+
+\subsection{Historia de la plataforma}
+Wazuh tiene su origen en el proyecto OSSEC (Open Source HIDS SECurity), un sistema de detección de intrusiones basado en host que proporciona capacidad de análisis de registros, monitoreo de integridad de archivos, generación de alertas y respuesta activa. En 2015, el equipo de Wazuh creó un fork de OSSEC con el propósito de ampliar sus capacidades y desarrollar una plataforma de monitoreo de seguridad más completa \cite{wazuh_migrating_ossec}.
+
+A partir de esta base, Wazuh mantuvo componentes fundamentales de OSSEC, como el análisis de eventos, el sistema de reglas y decoders, los agentes y las capacidades de monitorización de integridad y respuesta activa. Con el tiempo, el proyecto incorporo mas funcionalidades y mejoras en la arquitectura, como la integración con Elastic Stack para el almacenamiento y visualización de datos.
+
+\subsection{Arquitectura de Wazuh}
+Wazuh está constituido por un agente multiplataforma, encargado de recopilar información en los sistemas monitorizados, y tres componentes centrales: Wazuh server, Wazuh indexer y Wazuh dashboard. El agente transmite los datos al servidor para su procesamiento y análisis; posteriormente, los eventos y alertas son enviados al indexador para su almacenamiento y consulta, mientras que el dashboard proporciona la interfaz para su visualización y análisis \cite{wazuh_components}.
+
+\begin{itemize}
+    \item \textbf{Wazuh Agent:} Es un componente ligero que se instala en los sistemas monitorizados. Su función principal es recopilar información de seguridad, como registros de eventos, cambios en archivos y configuraciones del sistema, y enviarla al Wazuh server para su análisis.
+    \item \textbf{Wazuh Server:} Es el núcleo de la plataforma, encargado de recibir y procesar los datos enviados por los agentes. Aplica reglas de correlación y análisis para identificar posibles amenazas y generar alertas de seguridad.
+    \item \textbf{Wazuh Indexer:} Es el componente responsable de almacenar y organizar los datos procesados por el Wazuh server. Se basa en OpenSearch, un motor de búsqueda y análisis de código abierto, para permitir consultas rápidas y eficientes sobre los registros y eventos recopilados.
+    \item \textbf{Wazuh Dashboard:} Es la interfaz web que permite a los usuarios visualizar y analizar la información recopilada por la plataforma. Proporciona paneles de control, gráficos y herramientas de búsqueda para facilitar la interpretación de los datos y la toma de decisiones en materia de seguridad.
+\end{itemize}
+
 \section{Correlación de eventos}
-\section{Detección y respuesta ante incidentes}
+En una infraestructura de tecnologias de la información, los eventos de seguridad pueden generarse en diferentes sistemas y dispositivos. Cada evento por si solo puede informar sobre una actividad normal, un error inesperado o un posible intento de intrusión.
+La correlación de eventos es el proceso mediante el cual se analizan varios eventos, considerando sus relaciones temporales y contextuales, con el propósito de identificar una situación que no necesariamente puede determinarse a partir de un único evento.
+
+\begin{itemize}
+    \item \textbf{Regla de correlacion:} Es la regla que define la lógica que debe cumplirse para considerar que varios eventos están relacionados y, eventualmente, generar una alerta.
+    \item \textbf{Acciones:} Son los diferentes eventos que deben ocurrir para completar la secuencia definida por la regla.
+    \item \textbf{Filtros:} Son las condiciones que permiten determinar qué eventos pertenecen a cada acción. Los campos pueden ser, por ejemplo, una dirección IP de origen, un nombre de usuario, un host o dispositivo o un puerto/servicio.
+    \item \textbf{Umbral:} Define una cantidad mínima o condición de ocurrencia necesaria para que la acción sea considerada válida. Por ejemplo, generar la condición solo cuando ocurra el mismo evento 5 veces.
+    \item \textbf{Tiempo:} Representa la relación temporal entre los eventos. La regla puede exigir que las acciones ocurran dentro de un determinado intervalo. Por ejemplo, que un evento deba ocurrir dentro de los 60 segundos posteriores a otro.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{Figuras/correlacion_regla.jpg}
+    \caption{Esquema general de una regla de correlación de eventos.}
+    \label{fig:correlacion_eventos}
+\end{figure}
+
+Como se muestra en la Figura~\ref{fig:correlacion_eventos}, una regla de
+correlación puede establecer relaciones entre diferentes acciones o eventos considerando umbrales, filtros y condiciones temporales.
