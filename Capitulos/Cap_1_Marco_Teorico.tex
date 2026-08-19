@@ -92,7 +92,173 @@ La siguiente tabla describe los campos que componen un mensaje Syslog bajo este 
 
 \input{Tablas/rfc5424.tex}
 
+En cuanto a la longitud de los mensajes RFC 5424 no establece un límite máximo universal, el límite depende del transporte utilizado. Sin embargo, cualquier receptor debe poder aceptar mensajes de al menos 480 bytes y se recomienda que pueda aceptar hasta 2048 bytes.
+
+Esto es relevante al trabajar con equipos de red porque algunos fabricantes generan mensajes considerablemente largos, especialmente cuando incluyen información estructurada o detalles adicionales del evento.
+
+Finalmente, RFC 5424 define un mecanismo de transporte más flexible y confiable, permitiendo el uso de protocolos orientados a conexión como TCP y TLS, además del tradicional UDP. Estas especificaciones estan descritas en el RFC 5425 (TLS) \cite{rfc5425} y RFC 5426 (TCP) \cite{rfc5426}.
+
 \section{Syslog-ng}
+Syslog-ng es una aplicación de gestión de registros diseñada para la recopilación, procesamiento y distribución centralizada de mensajes de log. Su arquitectura permite recibir información proveniente de diferentes fuentes, aplicar operaciones de filtrado, análisis y transformación, y posteriormente enviar los mensajes procesados hacia uno o varios destinos.
+
+Una de las principales características es su capacidad para trabajar con una gran variedad de fuentes y destinos. El proyecto soporta mecanismos de entrada y salida asociados con Syslog, texto no estructurado, colas de mensajes, bases de datos SQL y NoSQL y plataformas de procesamiento de grandes volúmenes de información. También dispone de integraciones con tecnologías como Elasticsearch, Apache Kafka y Hadoop.
+
+La Open Source Edition (OSE) de syslog-ng es un proyecto de código abierto cuyo código fuente se encuentra disponible públicamente. El proyecto utiliza las licencias GNU General Public License (GPL) y GNU Lesser General Public License (LGPL), dependiendo del componente. La comunidad mantiene el código, documentación, correcciones y nuevas funcionalidades mediante un modelo de desarrollo abierto \cite{syslogng_community}.
+
+\subsection{Arquitectura y procesamiento}
+El funcionamiento de syslog-ng se basa en varios objetos de configuración que definen cómo deben ser recibidos y procesados los mensajes. Los principales componentes son sources, destinations, filters, parsers, rewrite rules, templates y log paths \cite{syslogng_documentation}.
+\begin{equation}
+\boxed{
+\substack{\text{Fuente de}\\\text{eventos}}
+\rightarrow
+\substack{\text{SOURCE}\\\text{Recepción}}
+\rightarrow
+\substack{\text{FILTER / PARSER}\\\text{Clasificación y extracción}}
+\rightarrow
+\substack{\text{REWRITE}\\\text{Normalización}}
+\rightarrow
+\substack{\text{TEMPLATE}\\\text{Formateo}}
+\rightarrow
+\substack{\text{DESTINATION}\\\text{Entrega}}
+}
+\label{eq:flujo-syslog-ng}
+\end{equation}
+
+El funcionamiento de cada uno es el siguiente:
+
+\subsubsection{Sources}
+Representan los puntos de entrada de los mensajes
+hacia syslog-ng. Mediante este componente se define el mecanismo utilizado para recibir los registros generados por dispositivos, aplicaciones o sistemas externos.
+
+Entre las fuentes disponibles se encuentran los archivos locales, los
+sockets del sistema y las conexiones de red mediante protocolos como UDP y TCP.
+
+Un ejemplo de una fuente de red que recibe mensajes mediante UDP en el
+puerto 514 es:
+
+\begin{lstlisting}[style=logstyle]
+source s_network {
+    network(
+        ip(0.0.0.0)
+        port(514)
+        transport("udp")
+    );
+};
+\end{lstlisting}
+
+En este caso, \texttt{s\_network} identifica la fuente y el controlador
+\texttt{network} establece las características de la recepción de los
+mensajes.
+
+\subsubsection{Filters}
+Los filtros permiten seleccionar los mensajes que cumplen
+determinadas condiciones. Estas condiciones pueden estar relacionadas con campos del mensaje Syslog, como facility, severity, host de origen, aplicación o contenido del mensaje.
+
+Por ejemplo, es posible crear un filtro para seleccionar únicamente mensajes relacionados con autenticación:
+
+\begin{lstlisting}[style=logstyle]
+filter f_auth {
+    facility(auth);
+};
+\end{lstlisting}
+
+Los filtros pueden combinarse mediante operadores lógicos para construir condiciones más específicas. Esto permite separar los eventos según su naturaleza antes de enviarlos hacia los destinos correspondientes.
+
+\subsubsection{Parsers}
+Permiten analizar el contenido de los mensajes y
+extraer información estructurada. Esta funcionalidad es especialmente importante cuando los dispositivos utilizan formatos propios o cuando la información relevante se encuentra dentro del campo de mensaje como por ejemplo:
+
+\begin{lstlisting}[style=logstyle]
+user=jdoe src=192.168.1.25 action=login status=failed
+\end{lstlisting}
+
+puede ser procesado para obtener diferentes campos:
+
+\begin{lstlisting}[style=logstyle]
+user   = jdoe
+src    = 192.168.1.25
+action = login
+status = failed
+\end{lstlisting}
+
+Luego la informacion extraida se usa con mayor facilidad en filtros, reescrituras y plantillas.
+
+\subsubsection{Rewrite}
+
+Permiten modificar los valores asociados a un mensaje durante su procesamiento. Pueden utilizarse para reemplazar,
+eliminar o establecer valores con el objetivo de normalizar la información proveniente de diferentes fuentes, como por ejemplo cuando diferentes dispositivos representan un mismo evento mediante expresiones diferentes:
+
+\begin{lstlisting}[style=logstyle]
+Login failed
+Authentication failure
+AUTH_FAIL
+\end{lstlisting}
+
+Mediante reglas de reescritura, estos valores pueden transformarse en una representación común:
+
+\begin{lstlisting}[style=logstyle]
+event_type=authentication_failure
+\end{lstlisting}
+
+Esta capacidad es muy fuerte en infraestructuras heterogéneas, ya que permite establecer una representación uniforme antes de entregar los eventos a una plataforma de análisis.
+
+\subsubsection{Templates}
+Definen la representación final de los mensajes
+que serán enviados a un destino. Estas utilizan macros y valores estructurados disponibles durante el procesamiento para construir el contenido de salida.
+
+Por ejemplo, puede definirse una plantilla para generar una estructura JSON:
+
+\begin{lstlisting}[style=logstyle]
+template t_json {
+    template("{\"host\":\"${HOST}\",
+\"program\":\"${PROGRAM}\",
+\"message\":\"${MESSAGE}\"}\n");
+};
+\end{lstlisting}
+
+Las plantillas permiten adaptar el formato de los registros a los requerimientos del sistema que los recibe.
+
+\subsubsection{Destinations}
+
+Representan los puntos hacia los cuales syslog-ng entrega los mensajes después de su procesamiento. Un destino puede corresponder a un archivo local, una base de datos, un servicio remoto o un dispositivo externo.
+
+Por ejemplo, para almacenar los mensajes en un archivo:
+
+\begin{lstlisting}[style=logstyle]
+destination d_logs {
+    file("/var/log/network.log");
+};
+\end{lstlisting}
+
+Y para configurarse un destino de red para reenviar los mensajes hacia otro servidor:
+
+\begin{lstlisting}[style=logstyle]
+destination d_wazuh {
+    network(
+        "192.168.1.100"
+        port(514)
+        transport("udp")
+    );
+};
+\end{lstlisting}
+
+En la arquitectura implementada en el proyecto, este mecanismo permite utilizar syslog-ng como intermediario entre los dispositivos que generan los registros y la plataforma Wazuh.
+
+\subsubsection{Log paths}
+Definen las rutas de procesamiento que siguen los mensajes dentro de syslog-ng. En ellos se relacionan las fuentes, filtros, procesadores y destinos, estableciendo de esta manera el flujo de los registros:
+
+\begin{lstlisting}[style=logstyle]
+log {
+    source(s_network);
+    filter(f_auth);
+    destination(d_wazuh);
+};
+\end{lstlisting}
+
+En este caso, los mensajes recibidos mediante \texttt{s\_network} son evaluados por el filtro \texttt{f\_auth}. Aquellos que cumplen la condición establecida son enviados posteriormente hacia \texttt{d\_wazuh}.
+
+Los log paths constituyen, por tanto, el mecanismo mediante el cual los diferentes componentes de syslog-ng se integran para construir el flujo de procesamiento de los registros.
+
 \section{Sistemas de Gestión de Información y Eventos de Seguridad (SIEM)}
 \section{Wazuh}
 \section{Correlación de eventos}
