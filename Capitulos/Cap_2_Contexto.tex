@@ -1,0 +1,27 @@
+\chapter{CONTEXTO DEL PROYECTO}
+
+\section{Contexto empresarial}
+EMCALI EICE ESP es una empresa de servicios públicos que desarrolla actividades asociadas a diferentes áreas de prestación de servicios a la comunidad. Dentro de su estructura se encuentra la Unidad de Gestión de Plataformas de Servicios y Contenidos (UGPSC), encargada de la operación y administración de la infraestructura que soporta los servicios de telecomunicaciones ofrecidos por la organización.
+
+El presente proyecto de práctica profesional se desarrolla específicamente en el contexto de esta unidad y se encuentra orientado a la gestión y análisis de los registros generados por las plataformas y dispositivos que hacen parte de su infraestructura. Por lo tanto, el alcance del proyecto se encuentra directamente relacionado con los servicios de Internet, televisión sobre IP (IPTV) y voz sobre IP (VoIP).
+
+La infraestructura asociada a estos servicios comprende diferentes elementos de acceso, agregación y transporte, cuya operación requiere ser supervisada para identificar oportunamente eventos relacionados con su funcionamiento y particularmente, con aspectos asociados a la seguridad de la infraestructura tecnológica.
+
+\section{Diversidad de la infraestructura tecnológica}
+La red administrada por la UGPSC se encuentra conformada por equipos de diferentes fabricantes, entre los que se encuentran Juniper, Huawei, Cisco, HP, FiberHome y Fortinet. Esta heterogeneidad constituye un factor relevante para la gestión de los registros, debido a que cada fabricante usa formatos diferentes para la información de sus eventos.
+
+La infraestructura también comprende servidores que participan en la prestación y administración de los servicios de telecomunicaciones. Por esta razón, el proyecto no se limita exclusivamente a los registros provenientes de los equipos de red, sino que contempla también aquellos generados por dichos servidores.
+
+\section{Situación inicial del ISP}
+Antes del desarrollo del proyecto, los registros generados por los diferentes dispositivos de la infraestructura eran centralizados en un servidor syslog-ng. Sin embargo, la plataforma utilizada contaba con una versión antigua y los registros eran almacenados de manera masiva y sin un proceso de organización o clasificación que facilitara su análisis cuando hubiesen fallos o incidentes.
+
+Como consecuencia, cuando esto pasaba o se requería verificar el comportamiento registrado por un dispositivo, el proceso de consulta implicaba realizar búsquedas y filtros directamente sobre grandes cantidades de registros almacenados en el servidor. Esta situación dificultaba la identificación de información relevante, especialmente cuando era necesario analizar acontecimientos ocurridos durante un periodo determinado o relacionar registros generados por diferentes dispositivos.
+
+El problema no estaba relacionado solamente con la cantidad de información almacenada. La heterogeneidad de los dispositivos también implicaba que los registros presentaran diferentes estructuras y formatos, lo que dificultaba su comparación, por lo tanto, aunque la infraestructura dispusiera de una fuente centralizada de registros, no había un mecanismo especializado que transformara ese volumen de información en eventos de seguridad fácilmente identificables y que estuviesen organizados por fabricante o etapa de la red.
+
+\section{Antecedentes y propósito del proyecto}
+Como antecedente del proyecto, un ingeniero que se incorporó a la UGPSC había desarrollado previamente una implementación basada en Graylog para el procesamiento de registros provenientes de un equipo de red Huawei. Esta solución permitía extraer información relevante de los registros y generar alertas asociadas a determinados parámetros de operación del dispositivo. Esta experiencia permitió identificar el potencial del procesamiento centralizado de registros como mecanismo para obtener información relevante a partir de los eventos generados por la infraestructura.
+
+El proyecto se planteó como una solución complementaria a las herramientas de monitoreo operativo existentes, particularmente Zabbix, utilizado para la supervisión de variables de operación, rendimiento y disponibilidad mediante SNMP. En contraste, la solución desarrollada se orienta al análisis de los eventos registrados desde una perspectiva de ciberseguridad, considerando información de autenticaciones, cambios de configuración, fallos, accesos, establecimiento y terminación de sesiones y otros eventos que pueden adquirir relevancia al ser analizados de manera conjunta.
+
+Dentro del alcance de la práctica se encuentra la configuración y administración de ambas plataformas, así como el desarrollo y ajuste continuo de reglas, decoders y mecanismos de procesamiento. Asi, el proyecto no se limita a la implementación de una plataforma de monitoreo, sino que comprende un proceso de investigación, desarrollo y optimización de mecanismos de detección orientados a las características particulares del ISP.

@@ -1,0 +1,39 @@
+\chapter{DESARROLLO DEL PROYECTO}
+
+\section{Establecimiento del servidor central de logs}
+Como punto inicial para la implementación de la solución de gestión centralizada de eventos, se estableció un servidor dedicado a la recepción y procesamiento de los logs generados por toda la RMS. El servidor fue desplegado como una máquina virtual sobre un sistema Linux basado en Ubuntu Server sobre el cual se instaló la herramienta syslog-ng de la siguiente manera:
+
+\begin{longtable}{p{0.35\textwidth} p{0.55\textwidth}}
+    \caption{Características del servidor central de logs}
+    \label{tab:caracteristicas_servidor_logs} \\
+
+    \hline
+    \textbf{Característica} & \textbf{Especificación} \\
+    \hline
+    \endfirsthead
+
+    \multicolumn{2}{c}%
+    {{\tablename\ \thetable{} -- continuación}} \\
+
+    \hline
+    \textbf{Característica} & \textbf{Especificación} \\
+    \hline
+    \endhead
+
+    \hline
+    \multicolumn{2}{r}{{Continúa en la siguiente página}} \\
+    \endfoot
+
+    \hline
+    \endlastfoot
+
+    Plataforma & Máquina virtual \\
+    Hipervisor & VMware \\
+    Arquitectura & x86\_64 \\
+    Procesadores virtuales & 4 vCPU \\
+    Procesador reportado & Intel Xeon E5-2630 v3 @ 2.40 GHz \\
+    Sistema operativo & Ubuntu Server 24.04.4 LTS \\
+    Plataforma de gestión de logs & syslog-ng \\
+    Versión de syslog-ng & 4.3.1 \\
+
+\end{longtable}

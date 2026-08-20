@@ -1,6 +1,6 @@
-\chapter{MARCO TEORICO}
+\chapter{MARCO TEÓRICO}
 \section{Registros de eventos (logs)}
-Los registros de eventos, comúnmente denominados \textit{logs}, son registros cronologicos generados por sistemas informáticos, aplicaciones, servidores y dispositivos de red como resultado de las diferentes actividades que se llevan a cabo durante su operación. Estos registros permiten conservar información sobre acontecimientos importantes del sistema, proporcionando evidencia sobre su funcionamiento, cambios de estado, errores y accesos.
+Los registros de eventos, comúnmente denominados \textit{logs}, son registros cronológicos generados por sistemas informáticos, aplicaciones, servidores y dispositivos de red como resultado de las diferentes actividades que se llevan a cabo durante su operación. Estos registros permiten conservar información sobre acontecimientos importantes del sistema, proporcionando evidencia sobre su funcionamiento, cambios de estado, errores y accesos.
 
 La información contenida en un registro depende de la aplicación o dispositivo que lo genera. Sin embargo, generalmente un evento puede contener elementos como una marca temporal, la identificación del dispositivo o sistema que lo generó, el proceso o servicio asociado, un nivel de severidad y una descripción del acontecimiento. La combinación de estos elementos permite establecer el contexto en el que ocurrió un evento y facilita su posterior análisis.
 
@@ -13,7 +13,7 @@ La información contenida en un registro depende de la aplicación o dispositivo
 Aug 12 10:35:22 router01 Interface ge-0/0/1 changed state to down
 \end{lstlisting}
 
-Sin embargo, los distintos fabricantes y aplicaciones pueden seguir formatos de registro propios a pesar de que existen estandares establecidos, por esta razon no es posible categorizar el origen de los registros de eventos de manera uniforme.
+Sin embargo, los distintos fabricantes y aplicaciones pueden seguir formatos de registro propios a pesar de que existen estándares establecidos, por esta razón no es posible categorizar el origen de los registros de eventos de manera uniforme.
 Afortunadamente, todos estos eventos pueden categorizarse por niveles de severidad, que van desde información general hasta errores críticos que requieren atención inmediata. La correcta gestión y análisis de los registros de eventos es fundamental para la administración de sistemas, la resolución de problemas, la auditoría de seguridad y el cumplimiento de normativas y regulaciones.
 
 \section{Protocolo Syslog}
@@ -59,7 +59,7 @@ La estructura de un mensaje RFC 3164 puede representarse conceptualmente como:
     \label{fig:rfc3164}
 \end{figure}
 
-La siguiente tabla describe los campos que componen un mensaje Syslog bajo este estandar.
+La siguiente tabla describe los campos que componen un mensaje Syslog bajo este estándar.
 
 \input{Tablas/rfc3164.tex}
 
@@ -67,7 +67,7 @@ Una característica importante de RFC 3164 es que no define un esquema rígido p
 
 A nivel de transporte, RFC 3164 contempla principalmente el uso de UDP, particularmente sobre el puerto 514, sin establecer mecanismos propios de confirmación, retransmisión o control de congestión. Por esta razón, el transporte definido bajo este modelo es de naturaleza no orientada a conexión y no garantiza la entrega de los mensajes.
 
-Su diseño sencillo puede presentar dificultades en los entornos informáticos modernos. Por ejemplo, su formato de marca de tiempo carece de año y zona horaria, lo que puede generar confusión al correlacionar registros entre sistemas o durante investigaciones que abarcan varios periodos de tiempo. Actualente este estandar esta considerado como obsoleto y fue reemplazado formalmente por el estándar más completo RFC 5424, aunque sigue activo en algunos equipos y redes pequeñas.
+Su diseño sencillo puede presentar dificultades en los entornos informáticos modernos. Por ejemplo, su formato de marca de tiempo carece de año y zona horaria, lo que puede generar confusión al correlacionar registros entre sistemas o durante investigaciones que abarcan varios periodos de tiempo. Actualmente este estándar esta considerado como obsoleto y fue reemplazado formalmente por el estándar más completo RFC 5424, aunque sigue activo en algunos equipos y redes pequeñas.
 
 \subsubsection{RFC 5424}
 El RFC 5424, denominado The Syslog Protocol, fue publicado por el IETF en marzo de 2009, define un formato estandarizado para los mensajes del protocolo syslog \cite{rfc5424}. Su principal objetivo es proporcionar una estructura más precisa y extensible que la definida previamente por RFC 3164, algunas de las mejoras introducidas que buscan abordar las limitaciones son las siguientes:
@@ -88,7 +88,7 @@ La estructura de un mensaje RFC 5424 puede representarse conceptualmente como:
     \label{fig:rfc5424}
 \end{figure}
 
-La siguiente tabla describe los campos que componen un mensaje Syslog bajo este estandar.
+La siguiente tabla describe los campos que componen un mensaje Syslog bajo este estándar.
 
 \input{Tablas/rfc5424.tex}
 
@@ -96,7 +96,7 @@ En cuanto a la longitud de los mensajes RFC 5424 no establece un límite máximo
 
 Esto es relevante al trabajar con equipos de red porque algunos fabricantes generan mensajes considerablemente largos, especialmente cuando incluyen información estructurada o detalles adicionales del evento.
 
-Finalmente, RFC 5424 define un mecanismo de transporte más flexible y confiable, permitiendo el uso de protocolos orientados a conexión como TCP y TLS, además del tradicional UDP. Estas especificaciones estan descritas en el RFC 5425 (TLS) \cite{rfc5425} y RFC 5426 (TCP) \cite{rfc5426}.
+Finalmente, RFC 5424 define un mecanismo de transporte más flexible y confiable, permitiendo el uso de protocolos orientados a conexión como TCP y TLS, además del tradicional UDP. Estas especificaciones están descritas en el RFC 5425 (TLS) \cite{rfc5425} y RFC 5426 (TCP) \cite{rfc5426}.
 
 \section{Syslog-ng}
 Syslog-ng es una aplicación de gestión de registros diseñada para la recopilación, procesamiento y distribución centralizada de mensajes de log. Su arquitectura permite recibir información proveniente de diferentes fuentes, aplicar operaciones de filtrado, análisis y transformación, y posteriormente enviar los mensajes procesados hacia uno o varios destinos.
@@ -181,7 +181,7 @@ action = login
 status = failed
 \end{lstlisting}
 
-Luego la informacion extraida se usa con mayor facilidad en filtros, reescrituras y plantillas.
+Luego la información extraída se usa con mayor facilidad en filtros, re-escrituras y plantillas.
 
 \subsubsection{Rewrite}
 
@@ -262,9 +262,9 @@ Los log paths describen el como los diferentes componentes de syslog-ng se integ
 \section{Sistemas de Gestión de Información y Eventos de Seguridad (SIEM)}
 Un SIEM (Security Information and Event Management, o Gestión de Información y Eventos de Seguridad) es una plataforma que recopila, centraliza y analiza registros de actividad (logs) y alertas de toda una infraestructura de red para detectar ciberamenazas en tiempo real \cite{microsoft_siem}.
 
-En principio, su funcionamiento se basa en juntar datos de servidores, redes, aplicaciones y dispositivos, luego analizarlos correlacionando eventos individuales que por si solos podrian parecer normales, pero que, al compararlos temporalmente y en conjunto entre distintos equipos, pueden indicar un comportamiento anómalo o una amenaza de seguridad. En estos casos la plataforma avisa al equipo de seguridad (SOC) o realiza acciones automáticas de mitigación.
+En principio, su funcionamiento se basa en juntar datos de servidores, redes, aplicaciones y dispositivos, luego analizarlos correlacionando eventos individuales que por si solos podrían parecer normales, pero que, al compararlos temporalmente y en conjunto entre distintos equipos, pueden indicar un comportamiento anómalo o una amenaza de seguridad. En estos casos la plataforma avisa al equipo de seguridad (SOC) o realiza acciones automáticas de mitigación.
 
-Este tipo de sistemas tambien facilitan la representacion de estadisticas mediante esquemas visuales de la actividad de la red, lo que permite a los administradores y equipos de seguridad identificar patrones y tendencias. De igual manera, ayuda a cumplir normas de protección de datos al guardar historiales de actividad y generar reportes de auditoría.
+Este tipo de sistemas también facilitan la representación de estadísticas mediante esquemas visuales de la actividad de la red, lo que permite a los administradores y equipos de seguridad identificar patrones y tendencias. De igual manera, ayuda a cumplir normas de protección de datos al guardar historiales de actividad y generar reportes de auditoría.
 
 \section{Wazuh}
 Wazuh es una plataforma de seguridad de código abierto orientada a la detección, análisis y respuesta ante eventos de seguridad en infraestructuras informáticas, ademas, la plataforma integra funcionalidades asociadas a SIEM y XDR y permite recopilar información proveniente de cualquier fuente de registros de eventos, incluyendo servidores, aplicaciones, dispositivos de red y sistemas operativos. Su arquitectura distribuida permite desplegar agentes en los sistemas monitorizados, los cuales recopilan información y la envían a un servidor central para su análisis y correlación.
@@ -285,11 +285,11 @@ Wazuh está constituido por un agente multiplataforma, encargado de recopilar in
 \end{itemize}
 
 \section{Correlación de eventos}
-En una infraestructura de tecnologias de la información, los eventos de seguridad pueden generarse en diferentes sistemas y dispositivos. Cada evento por si solo puede informar sobre una actividad normal, un error inesperado o un posible intento de intrusión.
+En una infraestructura de tecnologías de la información, los eventos de seguridad pueden generarse en diferentes sistemas y dispositivos. Cada evento por si solo puede informar sobre una actividad normal, un error inesperado o un posible intento de intrusión.
 La correlación de eventos es el proceso mediante el cual se analizan varios eventos, considerando sus relaciones temporales y contextuales, con el propósito de identificar una situación que no necesariamente puede determinarse a partir de un único evento.
 
 \begin{itemize}
-    \item \textbf{Regla de correlacion:} Es la regla que define la lógica que debe cumplirse para considerar que varios eventos están relacionados y, eventualmente, generar una alerta.
+    \item \textbf{Regla de correlación:} Es la regla que define la lógica que debe cumplirse para considerar que varios eventos están relacionados y, eventualmente, generar una alerta.
     \item \textbf{Acciones:} Son los diferentes eventos que deben ocurrir para completar la secuencia definida por la regla.
     \item \textbf{Filtros:} Son las condiciones que permiten determinar qué eventos pertenecen a cada acción. Los campos pueden ser, por ejemplo, una dirección IP de origen, un nombre de usuario, un host o dispositivo o un puerto/servicio.
     \item \textbf{Umbral:} Define una cantidad mínima o condición de ocurrencia necesaria para que la acción sea considerada válida. Por ejemplo, generar la condición solo cuando ocurra el mismo evento 5 veces.
