@@ -43,11 +43,13 @@
 \usepackage{multirow}
 \usepackage{makecell}
 \usepackage[table,xcdraw]{xcolor}
-\usepackage{colortbl}
+%\usepackage{colortbl}
+\usepackage{forest}
 
 % Otros
 \usepackage{ragged2e}
 \usepackage{verbatim}
+\usepackage{tikz}
 \usepackage{tikz}
 \usepackage{pifont}
 \usepackage{schemata}
@@ -250,7 +252,24 @@
     belowskip=0pt
 }
 
-\renewcommand{\lstlistingname}{Ejemplo}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstdefinestyle{terminal}{
+    basicstyle=\ttfamily\small,
+    frame=single,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false,
+    literate=
+        {├}{{|}}1
+        {└}{{|}}1
+        {│}{{|}}1
+        {─}{{-}}1
+}
+
+\renewcommand{\lstlistingname}{Esquema}
 
 % Formateo de tamaño de fuente para captions de figuras y tablas
 \captionsetup{

@@ -3,37 +3,46 @@
 \section{Establecimiento del servidor central de logs}
 Como punto inicial para la implementación de la solución de gestión centralizada de eventos, se estableció un servidor dedicado a la recepción y procesamiento de los logs generados por toda la RMS. El servidor fue desplegado como una máquina virtual sobre un sistema Linux basado en Ubuntu Server sobre el cual se instaló la herramienta syslog-ng de la siguiente manera:
 
-\begin{longtable}{p{0.35\textwidth} p{0.55\textwidth}}
-    \caption{Características del servidor central de logs}
-    \label{tab:caracteristicas_servidor_logs} \\
+\input{Tablas/server_syslog.tex}
 
-    \hline
-    \textbf{Característica} & \textbf{Especificación} \\
-    \hline
-    \endfirsthead
+Como se menciono en la situación inicial del servidor en el capitulo del contexto, el almacenamiento de logs se hacia de manera arbitraria y sin control del flujo de información desde cada dispositivo de red, por esta razón, con el propósito de facilitar la administración y escalabilidad del nuevo servidor central de logs, la configuración de syslog-ng se organizó de manera modular. En lugar de concentrar las definiciones de fuentes, destinos, filtros y rutas de procesamiento en un único archivo, se estableció una estructura jerárquica de archivos de configuración dentro del directorio \textbf{/etc/syslog-ng/}.
 
-    \multicolumn{2}{c}%
-    {{\tablename\ \thetable{} -- continuación}} \\
+La estructura implementada se organizó de la siguiente manera:
 
-    \hline
-    \textbf{Característica} & \textbf{Especificación} \\
-    \hline
-    \endhead
+\input{Figuras/conf_syslog.tex}
 
-    \hline
-    \multicolumn{2}{r}{{Continúa en la siguiente página}} \\
-    \endfoot
+El archivo principal \textbf{syslog-ng.conf} actúa como punto central de configuración y se utiliza para incorporar, mediante la directiva \textbf{@include}, los diferentes archivos ubicados en el directorio \textbf{conf.d} de la siguiente manera:
 
-    \hline
-    \endlastfoot
+\begin{lstlisting}[
+    basicstyle=\ttfamily\footnotesize,
+    frame=single,
+    aboveskip=15pt
+]
+@include "/etc/syslog-ng/conf.d/00-options.conf"
+@include "/etc/syslog-ng/conf.d/10-sources.conf"
+@include "/etc/syslog-ng/conf.d/20-destinations.conf"
+@include "/etc/syslog-ng/conf.d/30-filters.conf"
+@include "/etc/syslog-ng/conf.d/40-logpaths.conf"
+\end{lstlisting}
 
-    Plataforma & Máquina virtual \\
-    Hipervisor & VMware \\
-    Arquitectura & x86\_64 \\
-    Procesadores virtuales & 4 vCPU \\
-    Procesador reportado & Intel Xeon E5-2630 v3 @ 2.40 GHz \\
-    Sistema operativo & Ubuntu Server 24.04.4 LTS \\
-    Plataforma de gestión de logs & syslog-ng \\
-    Versión de syslog-ng & 4.3.1 \\
+Mientras que los analizadores de sintaxis (parsers) y las plantillas (templates) están divididos según el fabricante.
 
-\end{longtable}
+\begin{lstlisting}[
+    basicstyle=\ttfamily\footnotesize,
+    frame=single,
+    aboveskip=15pt
+]
+# Parsers para cada vendor
+@include "/etc/syslog-ng/conf.d/parsers/10-huawei_p.conf"
+@include "/etc/syslog-ng/conf.d/parsers/20-juniper_p.conf"
+
+# Templates para cada vendor
+@include "/etc/syslog-ng/conf.d/templates/10-huawei_t.conf"
+@include "/etc/syslog-ng/conf.d/templates/20-juniper_t.conf"
+\end{lstlisting}
+
+Mediante esta distribución de configuración, cada componente puede ser modificado de forma independiente sin alterar directamente la estructura principal del servidor.
+
+El directorio \textbf{lists\_devices} esta destinado al almacenamiento de archivos que contienen listas de equipos agrupados de acuerdo con varios criterios como lo pueden ser fabricante, tipo de equipo o localización. Estas listas son utilizadas por los mecanismos de filtrado para determinar que flujo toman los mensajes recibidos de los dispositivos sin alterar directamente las reglas de procesamiento de syslog-ng.
+
+De esta manera, la incorporación o eliminación de equipos se realiza modificando la lista correspondiente, manteniendo separada la información de inventario de la lógica de configuración.

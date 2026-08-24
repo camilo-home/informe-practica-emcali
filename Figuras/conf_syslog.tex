@@ -1,0 +1,47 @@
+\begin{figure}[H]
+    \centering
+
+    \begin{forest}
+        for tree={
+            grow'=0,
+            %draw,
+            align=left,
+            anchor=west,
+            %edge={-latex},
+            parent anchor=east,
+            child anchor=west,
+            l sep=60pt,
+            s sep=10pt,
+            text height=1.5ex,
+            text depth=0.25ex,
+            font=\ttfamily\footnotesize
+        }
+        [/etc/syslog-ng/
+            [syslog-ng.conf]
+            [conf.d/
+                [00-options.conf]
+                [10-sources.conf]
+                [20-destinations.conf]
+                [30-filters.conf]
+                [40-logpaths.conf]
+                [parsers/
+                    [10-huawei\_p.conf]
+                    [20-juniper\_p.conf]
+                ]
+                [templates/
+                    [10-huawei\_t.conf]
+                    [20-juniper\_t.conf]
+                ]
+            ]
+            [devices\_list/
+                [sw\_rms.list]
+                [edge\_routers.list]
+                [bras.list]
+            ]
+        ]    
+    \end{forest}
+
+    \caption{Estructura de archivos de configuración del servidor syslog-ng}
+    \label{fig:estructura_archivos_syslogng}
+
+\end{figure}
