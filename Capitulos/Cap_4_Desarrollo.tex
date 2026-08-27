@@ -41,8 +41,59 @@ Mientras que los analizadores de sintaxis (parsers) y las plantillas (templates)
 @include "/etc/syslog-ng/conf.d/templates/20-juniper_t.conf"
 \end{lstlisting}
 
-Mediante esta distribución de configuración, cada componente puede ser modificado de forma independiente sin alterar directamente la estructura principal del servidor.
+Mediante esta distribución de configuración, cada componente puede ser modificado de forma independiente sin alterar directamente la estructura principal del servidor \cite{syslogng_include}.
 
 El directorio \textbf{lists\_devices} esta destinado al almacenamiento de archivos que contienen listas de equipos agrupados de acuerdo con varios criterios como lo pueden ser fabricante, tipo de equipo o localización. Estas listas son utilizadas por los mecanismos de filtrado para determinar que flujo toman los mensajes recibidos de los dispositivos sin alterar directamente las reglas de procesamiento de syslog-ng.
 
 De esta manera, la incorporación o eliminación de equipos se realiza modificando la lista correspondiente, manteniendo separada la información de inventario de la lógica de configuración.
+
+\subsection{Opciones globales (options)}
+El aplicativo de syslog-ng trae un set de opciones por defecto, sin embargo, para tener un entorno mas optimizado para el objetivo del proyecto, en el archivo de configuración \textbf{00-options.conf} se establecieron varias opciones adicionales:
+
+\begin{itemize}
+    \item \textbf{threaded(yes):} Esta opción habilita el procesamiento multihilo, esto debido a que el servidor syslog-ng actúa como concentrador de registros provenientes simultáneamente de múltiples dispositivos de red. La configuración permite distribuir el procesamiento de los mensajes entre varios hilos de ejecución, aprovechando los recursos de procesamiento disponibles.
+    \item \textbf{keep-timestamp(yes):} Esta opción se habilito con el propósito de conservar la marca temporal original contenida en los mensajes recibidos, esto evita que el procesamiento realizado por el servidor syslog-ng altere la referencia temporal del evento original.
+    \item \textbf{log-msg-size(4096):} Esta opción fja un tamaño máximo en bytes para los mensajes que se reciben.
+    A partir de la caracterización de 14.976.269 registros se determinó que la longitud máxima observada de los mensajes fue de 820 bytes, mientras que el 99,9 \% de los registros presentó una longitud igual o inferior a 546 bytes. Con base en estos resultados se estableció un tamaño máximo de mensaje de 4096 bytes, este valor proporciona un margen superior al máximo observado y permite admitir variaciones en la longitud de los registros provenientes de los diferentes fabricantes sin establecer un límite excesivamente elevado.
+    \item \textbf{keep\_hostname(yes):} Esta opción sirve para mantener el hostname original del dispositivo que emitió el log hacia el servidor syslog, esto es fundamental porque en el contexto del proyecto, el hostname del servidor syslog-ng no debe reemplazar al del dispositivo que generó el mensaje ya que esta información es vital para un SIEM.
+    \item \textbf{log\_fifo\_size(4096):} Esta configuración proporciona una cola de procesamiento con capacidad para 4096 mensajes ya que el servidor concentra mensajes provenientes de múltiples dispositivos de red. De esta forma, las ráfagas de tráfico de logs pueden ser gestionadas temporalmente sin que el procesamiento de los mensajes dependa exclusivamente de una correspondencia inmediata entre la velocidad de recepción y la velocidad de procesamiento \cite{syslogng_global_options}.
+\end{itemize}
+
+\subsection{Fuentes (sources)}
+En el archivo de fuentes \textbf{10-sources.conf} se establece de qué interfaz, dirección, protocolo y puerto serán recibidos los mensajes de registro. En la configuración actual se definió la fuente \textbf{s\_rms}, la cual usa el driver \textbf{syslog()} para recibir mensajes que usen el protocolo syslog y que provengan de los equipos de la red RMS.
+
+\begin{lstlisting}[
+    basicstyle=\ttfamily\footnotesize,
+    frame=single,
+    aboveskip=15pt
+]
+source s_rms {
+    syslog(
+        ip(10.29.10.75)
+        transport("udp")
+        port(514)
+    );
+};
+\end{lstlisting}
+
+El parámetro IP indica la dirección local en la que syslog-ng debe escuchar los mensajes, en el parámetro de transporte se establece UDP como protocolo a utilizar.
+En cuanto al puerto, el 514 corresponde al tradicionalmente utilizado para la recepción de mensajes Syslog sobre UDP con una sobrecarga reducida y sin establecer una conexión persistente entre el dispositivo emisor y el servidor \cite{syslogng_sources}.
+
+\subsection{Destinos (destinations)}
+El archivo \textbf{20-destinations.conf} contiene la definición de los destinos de los mensajes procesados por syslog-ng.
+En la arquitectura implementada, los destinos permiten separar los registros recibidos de acuerdo con los criterios definidos en los filtros, formatearlos y enviarlos a un destino local o remoto según el requerimiento \cite{syslogng_destinations}.
+Dado que el servidor sirve de banco histórico de logs, los mensajes se almacenan según se requiera, esto puede ser por fabricante, tipo de equipo o anillo de la topología al que pertenece.
+
+\begin{lstlisting}[
+    basicstyle=\ttfamily\footnotesize,
+    frame=single,
+    aboveskip=15pt
+]
+source s_rms {
+    syslog(
+        ip(10.29.10.75)
+        transport("udp")
+        port(514)
+    );
+};
+\end{lstlisting}
