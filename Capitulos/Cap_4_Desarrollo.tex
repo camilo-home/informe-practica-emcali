@@ -92,11 +92,12 @@ De manera general, cada destino se identifica mediante un nombre y utiliza un dr
 
 \begin{lstlisting}[
     basicstyle=\ttfamily\footnotesize,
-    frame=single
+    frame=single,
+    aboveskip=15pt
 ]
 destination <nombre_del_destino> {
     <driver_del_destino>(
-        "<ruta / destino>"
+        "<ruta/host>"
         port("<puerto>")
         transport("<protocolo>")
         template(<nombre_del_template>)

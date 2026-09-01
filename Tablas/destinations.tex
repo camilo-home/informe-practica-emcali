@@ -1,11 +1,12 @@
-\begin{longtable}{p{3.0cm} p{2.0cm} p{4.0cm} p{3.0cm} p{4.0cm}}
+\footnotesize
+\begin{longtable}{p{2.75cm} p{1.75cm} p{3.75cm} p{2.75cm} p{5.0cm}}
 \caption{Destinos configurados en syslog-ng}
 \label{tab:destinations_syslogng} \\
 
 \hline
 \textbf{Destino} &
 \textbf{Driver} &
-\textbf{Ruta / destino} &
+\textbf{Ruta / host} &
 \textbf{Template} &
 \textbf{Propósito} \\
 \hline
@@ -14,7 +15,7 @@
 \hline
 \textbf{Destino} &
 \textbf{Driver} &
-\textbf{Ruta / destino} &
+\textbf{Ruta / host} &
 \textbf{Template} &
 \textbf{Propósito} \\
 \hline
@@ -23,37 +24,37 @@
 \texttt{d\_all} &
 \texttt{file()} &
 \path{/data/var/log/syslog.log} &
--- &
+Formato sin procesar &
 Almacenamiento general de los registros. \\
 
 \texttt{d\_wazuh\_huawei} &
 \texttt{network()} &
 \path{10.27.27.198:514/UDP} &
-\path{t\_huawei\_sw} &
+\path{t_huawei_sw} &
 Envío de los registros procesados de los switches Huawei hacia el servidor Wazuh. \\
 
 \texttt{d\_wazuh\_juniper} &
 \texttt{network()} &
 \path{10.27.27.198:514/UDP} &
-\path{t\_juniper\_mx\_21\_2} &
+\path{t_juniper_mx_21_2} &
 Envío de los registros procesados de los equipos Juniper hacia el servidor Wazuh. \\
 
 \texttt{d\_huawei\_sw} &
 \texttt{file()} &
-\path{/data/var/log/huawei\_sw.log} &
+\path{/data/var/log/huawei_sw.log} &
 \texttt{t\_huawei\_sw} &
 Almacenamiento de los registros provenientes de switches Huawei. \\
 
 \texttt{d\_juniper\_er} &
 \texttt{file()} &
-\path{/data/var/log/juniper\_er.log} &
-\texttt{juniper\_mx\_21\_2} &
+\path{/data/var/log/juniper_er.log} &
+\path{t_juniper_mx_21_2} &
 Almacenamiento de los registros de Juniper edge routers después de aplicar el formato definido. \\
 
 \texttt{d\_juniper\_bras} &
 \texttt{file()} &
-\path{/data/var/log/juniper\_debug.log} &
-Definido en el destino &
+\path{/data/var/log/juniper_bras.log} &
+\path{t_juniper_mx_21_2} &
 Almacenamiento de los registros de los BRAS Juniper después de aplicar el formato definido. \\
 
 \texttt{d\_debug} &
