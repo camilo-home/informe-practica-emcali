@@ -7,8 +7,7 @@ La información contenida en un registro depende de la aplicación o dispositivo
 \begin{lstlisting}[
     style=logstyle,
     caption={Ejemplo de un evento de cambio de estado de una interfaz},
-    label={lst:log-cambio-estado},
-    captionpos=b
+    label={lst:log-cambio-estado}
 ]
 Aug 12 10:35:22 router01 Interface ge-0/0/1 changed state to down
 \end{lstlisting}
@@ -149,8 +148,7 @@ En este caso, \texttt{s\_network} identifica la fuente y el controlador
 mensajes.
 
 \subsubsection{Filters}
-Los filtros permiten seleccionar los mensajes que cumplen
-determinadas condiciones. Estas condiciones pueden estar relacionadas con campos del mensaje Syslog, como facility, severity, host de origen, aplicación o contenido del mensaje.
+Los filtros permiten seleccionar los mensajes que cumplen determinadas condiciones. Estas condiciones pueden estar relacionadas con campos del mensaje Syslog, como facility, severity, host de origen, aplicación o contenido del mensaje.
 
 Por ejemplo, es posible crear un filtro para seleccionar únicamente mensajes relacionados con autenticación:
 

@@ -13,11 +13,7 @@ La estructura implementada se organizó de la siguiente manera:
 
 El archivo principal \textbf{syslog-ng.conf} actúa como punto central de configuración y se utiliza para incorporar, mediante la directiva \textbf{@include}, los diferentes archivos ubicados en el directorio \textbf{conf.d} de la siguiente manera:
 
-\begin{lstlisting}[
-    basicstyle=\ttfamily\footnotesize,
-    frame=single,
-    aboveskip=15pt
-]
+\begin{lstlisting}[style=logstyle]
 @include "/etc/syslog-ng/conf.d/00-options.conf"
 @include "/etc/syslog-ng/conf.d/10-sources.conf"
 @include "/etc/syslog-ng/conf.d/20-destinations.conf"
@@ -27,11 +23,7 @@ El archivo principal \textbf{syslog-ng.conf} actúa como punto central de config
 
 Mientras que los analizadores de sintaxis (parsers) y las plantillas (templates) están divididos según el fabricante.
 
-\begin{lstlisting}[
-    basicstyle=\ttfamily\footnotesize,
-    frame=single,
-    aboveskip=15pt
-]
+\begin{lstlisting}[style=logstyle]
 # Parsers para cada vendor
 @include "/etc/syslog-ng/conf.d/parsers/10-huawei_p.conf"
 @include "/etc/syslog-ng/conf.d/parsers/20-juniper_p.conf"
@@ -62,10 +54,8 @@ El aplicativo de syslog-ng trae un set de opciones por defecto, sin embargo, par
 \subsection{10-sources.conf (Fuentes)}
 En el archivo de fuentes \textbf{10-sources.conf} se establece de qué interfaz, dirección, protocolo y puerto serán recibidos los mensajes de registro. En la configuración actual se definió la fuente \textbf{s\_rms}, la cual usa el driver \textbf{syslog()} para recibir mensajes que usen el protocolo syslog y que provengan de los equipos de la red RMS.
 
-\begin{lstlisting}[
-    basicstyle=\ttfamily\footnotesize,
-    frame=single,
-    aboveskip=15pt
+\begin{lstlisting}[style=logstyle,
+    caption={Configuracion de fuentes presente en el servidor centralizado de logs.}
 ]
 source s_rms {
     syslog(
@@ -84,16 +74,16 @@ El archivo \textbf{20-destinations.conf} contiene la definición de los destinos
 En la arquitectura implementada, los destinos permiten separar los registros recibidos de acuerdo con los criterios definidos en los filtros, formatearlos y enviarlos a un destino local o remoto según el requerimiento \cite{syslogng_destinations}.
 Dado que el servidor sirve de banco histórico de logs, se definieron diferentes destinos para almacenamiento general, almacenamiento específico por fabricante, diagnóstico y envío de registros hacia el servidor Wazuh. Conviene añadir que, los mensajes se pueden configurar para ser almacenados según se requiera, esto puede ser por fabricante, tipo de equipo o anillo de la topología al que pertenece.
 
-Para evitar redundancia, la configuración completa no se reproduce en el documento; en su lugar, se presenta la función de cada destino y sus principales parámetros.
+Para evitar redundancia, la configuración completa no se reproduce en el documento como en los apartados anteriores, en su lugar, se muestra la función de cada destino y sus principales parámetros:
 
 \input{Tablas/destinations.tex}
 
-De manera general, cada destino se identifica mediante un nombre y utiliza un driver que determina el mecanismo de salida de los mensajes. Los parámetros posteriores permiten establecer características particulares del destino, como su ubicación, protocolo de transporte o puerto. Cuando se requiere modificar el formato de salida del mensaje, se incorpora un template que define su estructura mediante macros de syslog-ng.
+De manera general, cada destino se identifica mediante un nombre y utiliza un driver que determina el mecanismo de salida de los mensajes. Los parámetros posteriores permiten establecer características particulares del destino, como su ubicación, protocolo de transporte o puerto y cando se requiere modificar el formato de salida del mensaje, se incorpora uno de los templates configurados mediante macros para definir su estructura.
 
-\begin{lstlisting}[
-    basicstyle=\ttfamily\footnotesize,
-    frame=single,
-    aboveskip=15pt
+En el proyecto se usa la siguiente estructura:
+
+\begin{lstlisting}[style=logstyle,
+    caption={Estructura de la configuracion de destinos presente en el servidor centralizado de logs.}
 ]
 destination <nombre_del_destino> {
     <driver_del_destino>(
@@ -105,3 +95,73 @@ destination <nombre_del_destino> {
     );
 };
 \end{lstlisting}
+
+Donde \textbf{nombre\_del\_destino} representa el identificador unico del \textit{destination}, \textbf{driver\_del\_destino} define hacia donde y como serán enviados los registros, \textbf{ruta/host} indica la ubicación del archivo o host destino, el parámetro \textbf{puerto} y \textbf{protocolo} se configuran de acuerdo a un destino remoto y en el caso del parámetro \textit{flags} se añaden opciones adicionales según se requiera para el formateo.
+
+Debido a que los destinos remotos (para cada fabricante) apuntan al mismo destino IP y puerto, se genera una colisión, para evitar esto se configura la opción \textbf{persist-name()} que define identificadores explícitos asignando un nombre único a cada destino.
+
+\begin{lstlisting}[style=logstyle,
+    caption={Definicion de destinations apuntando al servior Wazuh con identificadores persistentes para evitar la colision.}
+]
+destination d_wazuh_huawei {
+    network(
+        "10.27.27.198"
+        transport("udp")
+        port(514)
+        template(t_huawei_sw)
+        persist-name("d_wazuh_huawei")
+    );
+};
+
+destination d_wazuh_juniper {
+    network(
+        "10.27.27.198"
+        transport("udp")
+        port(514)
+        template(t_juniper_mx_21_2)
+        persist-name("d_wazuh_juniper")
+    );
+};
+\end{lstlisting}
+
+\subsection{30-filters.conf (Filtros)}
+En la implementación desarrollada, el archivo de configuración \textbf{30-filters.conf} define los filtros utilizados para clasificar hacia donde van los registros según la dirección IP de origen o según la estructura del mensaje recibido. Esta clasificación permite separar los eventos provenientes de diferentes grupos de dispositivos y aplicar posteriormente diferentes parsers, templates y destinos.
+
+Actualmente se encuentran definidos cuatro filtros principales:
+
+\begin{enumerate}
+    \item \textbf{f\_huawei\_sw:} Este filtro permite identificar los mensajes provenientes de los equipos Huawei pertenecientes a las redes:
+    \begin{itemize}
+        \item 10.29.201.0/24
+        \item 10.29.202.0/24
+        \item 10.29.203.0/24
+        \item 10.29.204.0/24
+        \item 10.29.205.0/24
+        \item 10.29.206.0/24
+    \end{itemize}
+
+    La utilización de \textbf{netmask()} permite que una única condición represente una red completa, en lugar de tener que declarar individualmente cada dirección IP de los dispositivos. Dichas redes se combinan mediante el operador lógico \textbf{OR}, por lo que un mensaje será aceptado por el filtro cuando su dirección de origen pertenezca a cualquiera de las seis subredes ya que estos dispositivos se encuentran distribuidos en diferentes segmentos de red.
+
+\begin{lstlisting}[style=logstyle]
+filter f_huawei_sw {
+    netmask("10.29.201.0/24")
+    or netmask("10.29.202.0/24")
+    or netmask("10.29.203.0/24")
+    or netmask("10.29.204.0/24")
+    or netmask("10.29.205.0/24")
+    or netmask("10.29.206.0/24");
+};
+\end{lstlisting}
+
+    \item \textbf{f\_edge\_routers:} Este filtro está destinado a identificar los mensajes provenientes de dos dispositivos específicos, el 10.29.15.25 y el 10.29.13.25. En este caso se utiliza el prefijo /32, que representa una única dirección IPv4 y el operador \textbf{OR} para agrupar ambos equipos dentro de la misma categoría lógica. Por tanto, a diferencia del filtro \textbf{f\_huawei\_sw}, este no clasifica una subred completa, sino exclusivamente los mensajes cuyo origen corresponda a alguna de esas dos direcciones.
+
+\begin{lstlisting}[style=logstyle]
+filter f_edgerouters {
+    netmask("10.29.15.25/32")
+    or netmask("10.29.13.25/32");
+};
+\end{lstlisting}
+
+    \item \textbf{f\_bras:} Este filtro permite identificar los logs provenientes de los equipos BRAS, dado que ambos equipos pertenecen a la misma subnet
+\end{enumerate}
+

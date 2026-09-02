@@ -240,7 +240,7 @@
 
 % Formateo de estilo especifico para logs de listings
 \lstdefinestyle{logstyle}{
-    basicstyle=\ttfamily\small,
+    basicstyle=\ttfamily\footnotesize,
     breaklines=true,
     columns=fullflexible,
     keepspaces=true,
@@ -249,25 +249,12 @@
     xleftmargin=2cm,
     xrightmargin=2cm,
     aboveskip=15pt,
-    belowskip=0pt
+    belowskip=0pt,
+    captionpos=b
 }
 
 \usepackage{listings}
 \usepackage{xcolor}
-
-\lstdefinestyle{terminal}{
-    basicstyle=\ttfamily\small,
-    frame=single,
-    breaklines=true,
-    columns=fullflexible,
-    keepspaces=true,
-    showstringspaces=false,
-    literate=
-        {├}{{|}}1
-        {└}{{|}}1
-        {│}{{|}}1
-        {─}{{-}}1
-}
 
 \renewcommand{\lstlistingname}{Esquema}
 

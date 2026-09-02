@@ -11,11 +11,12 @@
             parent anchor=east,
             child anchor=west,
             l sep=60pt,
-            s sep=10pt,
+            s sep=5pt,
             text height=1.5ex,
             text depth=0.25ex,
             font=\ttfamily\footnotesize
         }
+        [,phantom
         [/etc/syslog-ng/
             [syslog-ng.conf]
             [conf.d/
@@ -38,7 +39,17 @@
                 [edge\_routers.list]
                 [bras.list]
             ]
-        ]    
+        ]
+        [/data/var/log/
+            [boot.log]
+            [huawei\_sw.log]
+            [juniper\_er.log]
+            [juniper\_bras.log]
+            [syslog.log]
+            [kern]
+            [secure]
+        ]
+        ]
     \end{forest}
 
     \caption{Estructura de archivos de configuración del servidor syslog-ng}
