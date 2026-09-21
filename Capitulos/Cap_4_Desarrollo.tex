@@ -162,6 +162,161 @@ filter f_edgerouters {
 };
 \end{lstlisting}
 
-    \item \textbf{f\_bras:} Este filtro permite identificar los logs provenientes de los equipos BRAS, dado que ambos equipos pertenecen a la misma subnet
+    \item \textbf{f\_bras:} Este filtro permite identificar los logs provenientes de los equipos BRAS, dado que ambos equipos pertenecen a la misma subnet, para este caso se filtra solo por esa red.
+
+\begin{lstlisting}[style=logstyle]
+filter f_bras {
+    netmask("10.27.27.0/24");
+};
+\end{lstlisting}
+
+    \item \textbf{f\_sdata:} Este filtro utiliza una estrategia diferente a los previamente mencionados, no analiza IP de origen para enrutar mensajes a los diferentes destinos sino que analiza el contenido del campo \textbf{SDATA} del mensaje. La funcion \textbf{match()} busca una expresion regular que comience con "[". Por lo tanto, el filtro permite identificar logs que si tienen structuer 
 \end{enumerate}
 
+\section{Formateo de logs: Analisis de sintaxis (parsers) y plantillas (templates)}
+La carpeta \texttt{"Parsers"} contiene los archivos de configuracion que definen los analizadores de sintaxis diseñados para extraer los campos deseados de los log de diferentes fabricantes. Una vez los campos han sido extraidos y procesados, se usan las plantillas definidas en la carpeta \texttt{"Templates"} para formatear los registros en JSON y asi tener una estructura homogenea que pueda ser procesada por el Wazuh manager.
+
+\subsection{Huawei}
+PENDIENTE
+
+\section{Rotación, compresión y retención de logs}
+PENDIENTE
+
+\section{Forwarding de logs en JSON hacia Wazuh}
+PENDIENTE
+
+\section{Enrolamiento de agentes}
+PENDIENTE
+
+\section{Establecimiento de las reglas de correlacion y alertas de Wazuh}
+PENDIENTE
+\subsection{Mejora y ajuste constante}
+PENDIENTE
+
+\section{Almacenamiento e ingesta en OpenSearch}
+PENDIENTE
+\subsection{Índices y documentos}
+PENDIENTE
+\subsection{Modificación del Pipeline de Ingesta para el Enrutamiento de Estadísticas}
+Con el objetivo de optimizar el rendimiento del clúster y evitar la saturación del índice principal de seguridad (\texttt{wazuh-alerts-*}), se implementó una estrategia de segregación de datos desde la capa de ingesta. Aquellas alertas generadas exclusivamente con fines estadísticos o de conteo continuo (como cantidad promedio de traps de temperatura o de sesiones PPPoE reseteadas), son desviadas automáticamente hacia un índice dedicado denominado \texttt{wazuh-hits-*}.
+
+Este comportamiento se logra interceptando el flujo de datos en el nodo de ingesta de OpenSearch, mediante la modificación del pipeline de ingesta predeterminado proporcionado por Filebeat, el cual corresponde a \textit{filebeat-7.10.2-wazuh-alerts-pipeline}. Se incorporó un procesador condicional programado en el lenguaje \textit{Painless}, el cual consta de dos fases:
+
+\begin{itemize}
+\item \textbf{Evaluación condicional:} El pipeline inspecciona en tiempo real el contexto del documento (\texttt{ctx}) buscando la matriz de metadatos \texttt{rule.groups}. Basta con que el arreglo de grupos contenga la etiqueta específica \texttt{conteo}, entonces la condición se evaluará como verdadera. Esto permite que futuras reglas de conteo sean enrutadas automáticamente sin necesidad de modificar el pipeline, bastando únicamente con asignarles el grupo correspondiente en el nodo Manager.
+\item \textbf{Redireccionamiento del documento:} Al cumplirse la condición, el script accede a la variable interna de enrutamiento \verb|ctx._index| y reemplaza dinámicamente el prefijo \texttt{alerts} por \texttt{hits}, reescribiendo la ruta de almacenamiento final sin alterar la estructura temporal del log.
+\end{itemize}
+
+A continuación, se presenta el fragmento JSON del procesador inyectado al final del pipeline de configuración:
+
+\begin{lstlisting}[style=logstyle,
+    caption={Fragmento de código JSON del procesador condicional agregado al pipeline de ingesta.}
+]
+{
+  "script": {
+    "if": "ctx.rule != null && ctx.rule.groups != null && ctx.rule.groups.contains('conteo')",
+    "source": "ctx._index = ctx._index.replace('alerts', 'hits')"
+  }
+}
+\end{lstlisting}
+
+Es imperativo destacar que el motor de análisis de Wazuh (\texttt{wazuh-analysisd}) realiza la correlación de eventos (como cálculos de frecuencia y ventanas de tiempo) mediante un procesamiento de flujo en memoria RAM, de forma estrictamente unidireccional y en tiempo real. El motor no realiza consultas retrospectivas a los archivos locales de salida (\texttt{alerts.json}) ni ejecuta peticiones al motor de indexación de OpenSearch. Esta arquitectura desacoplada garantiza que las políticas de enrutamiento implementadas en los \textit{Ingest Pipelines} de OpenSearch (como la derivación de eventos estadísticos a \texttt{wazuh-hits-*}) operen exclusivamente en la capa de almacenamiento y visualización, sin interferir ni degradar las capacidades de detección de intrusiones y correlación lógica del nodo Manager.
+
+\section{Visualización y dashboards}
+PENDIENTE
+
+\section{Retencion de indices y alertas}
+Por defecto, Wazuh almacena tanto los índices como los archivos de alertas de forma indefinida y no trae una política de borrado automático preconfigurada. Si no se define un límite manualmente, el sistema acumulará datos hasta llenar el disco por completo.
+
+El almacenamiento en Wazuh se divide en dos capas, el almacenamiento de indices en el motor de busqueda OpenSearch y el almacenamiento local de alertas en archivos de texto plano, asi que para cada capa se definio una política de retencion diferente basado en su funcionamiento.
+
+\subsection{Wazuh indexer (OpenSearch)}
+En la arquitectura predeterminada de Wazuh Indexer (basado en OpenSearch), se diseñó e implementó una política de retención automatizada interactuando directamente con la API REST del motor a través del plugin Index State Management (ISM). Para establecer las politicas existen dos maneras dependiendo del contexto de configuracion.
+
+Netamente mediante lineas de comandos para un entorno de automatizacion con scripts de Bash, se disparan llamadas con el comando \textbf{curl} apuntando al puerto 9200 del Wazuh Indexer.
+
+\begin{lstlisting}[style=logstyle,
+    basicstyle=\scriptsize\ttfamily,
+    caption={Llamada a la API REST de OpenSearch para crear la politica de retencion.}
+]
+curl -k -u user:password -X PUT "https://127.0.0.1:9200/_plugins/_ism/policies/retencion-alertas-180" -H 'Content-Type: application/json' -d'
+{
+    "id": "retencion-alertas-180",
+    "seqNo": 372,
+    "primaryTerm": 1,
+    "policy": {
+        "policy_id": "retencion-alertas-180",
+        "description": "Politica para la eliminacion de indices mayores a 180 dias de manera automatica",
+        "last_updated_time": 1790002459274,
+        "schema_version": 21,
+        "error_notification": null,
+        "default_state": "inicial",
+        "states": [
+            {
+                "name": "inicial",
+                "actions": [],
+                "transitions": [
+                    {
+                        "state_name": "eliminar_indices",
+                        "conditions": {
+                            "min_index_age": "180d"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "eliminar_indices",
+                "actions": [
+                    {
+                        "retry": {
+                            "count": 3,
+                            "backoff": "exponential",
+                            "delay": "1m"
+                        },
+                        "delete": {}
+                    }
+                ],
+                "transitions": []
+            }
+        ],
+        "ism_template": [
+            {
+                "index_patterns": [
+                    "wazuh-alerts-*",
+                    "wazuh-statistics-*",
+                    "wazuh-monitoring-*"
+                ],
+                "priority": 1,
+                "last_updated_time": 1790001482656
+            }
+        ]
+    }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=logstyle,
+    basicstyle=\scriptsize\ttfamily,
+    caption={Llamada a la API REST de OpenSearch para aplicar la politica de retencion a los indices.}
+]
+curl -k -u user:password -X POST "https://127.0.0.1:9200/_plugins/_ism/add/wazuh-alerts-*,wazuh-statistics-*,wazuh-monitoring-*,wazuh-hits-*" -H 'Content-Type: application/json' -d'
+{
+  "policy_id": "retencion-alertas-180"
+}'
+\end{lstlisting}
+
+Se le delega al clúster la responsabilidad de aplicar esta política automáticamente a cualquier índice nuevo que coincida con los patrones establecidos (wazuh-alerts-*, wazuh-statistics-*, wazuh-monitoring-*, wazuh-hits-*). 
+
+Si la politica es aplicada correctamente, respondera con la linea:
+\[
+\texttt{\{\textquotedbl updated\_indices\textquotedbl:1,\textquotedbl failures\textquotedbl:false,\textquotedbl failed\_indices\textquotedbl:[]\}}.
+\]
+
+Los indices ingresan al estado \textit{inicial} donde se analiza periodicamente la condicion de transicion que recae en \textit{min\_index\_age}. Al ancanzar los 180 dias de atiguedad, el indice pasa al siguiente estado \textit{eliminar\_indices} donde se ejecuta la accion de borrado de manera automatica y de forma permanente para liberar almacenamiento en disco.
+
+El otro metodo para establecer la politica de retencion, depende de la interfaz grafica de Wazuh Dashboard, en la seccion de menu $\textit{Indexer management} \rightarrow \textit{Index Management} \rightarrow \textit{State management policies}$
+
+\subsection{Wazuh manager (archivo local)}
+PENDIENTE
+
+\section{Integración de Wazuh con Zabbix}
+PENDIENTE
