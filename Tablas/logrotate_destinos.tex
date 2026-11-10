@@ -1,0 +1,33 @@
+\small
+\begin{longtable}{p{0.35\textwidth} p{0.55\textwidth}}
+    \caption{Ubicación de los archivos de logs gestionados por logrotate}
+    \label{tab:logrotate_destinos} \\
+
+    \hline
+    \textbf{Evento} & \textbf{Ubicación} \\
+    \hline
+    \endfirsthead
+
+    \multicolumn{2}{c}%
+    {{\tablename\ \thetable{} -- continuación}} \\
+
+    \hline
+    \textbf{Evento} & \textbf{Ubicación} \\
+    \hline
+    \endhead
+
+    \hline
+    \multicolumn{2}{r}{{Continúa en la siguiente página}} \\
+    \footnotemark
+    \endfoot
+
+    \hline
+    \endlastfoot
+
+    Logs RAW generales (RMS) & /data/var/log/all\_rms\_raw.log \\
+    Switches Huawei S12000/S7700 & /data/var/log/huawei\_sw.log \\
+    Edge Routers Juniper MX480 & /data/var/log/juniper\_er.log \\
+    BRAS Juniper MX960 & /data/var/log/juniper\_bras.log \\ 
+    Logs del sistema operativo local & /var/log/*
+
+\end{longtable}

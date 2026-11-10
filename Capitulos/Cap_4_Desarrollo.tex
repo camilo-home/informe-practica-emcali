@@ -11,7 +11,7 @@ La estructura implementada se organizó de la siguiente manera:
 
 \input{Figuras/conf_syslog.tex}
 
-El archivo principal \textbf{syslog-ng.conf} actúa como punto central de configuración y se utiliza para incorporar, mediante la directiva \textbf{@include}, los diferentes archivos ubicados en el directorio \textbf{conf.d} de la siguiente manera:
+El archivo principal \textbf{syslog-ng.conf} \label{sec:syslog-ng.conf} actúa como punto central de configuración y se utiliza para incorporar, mediante la directiva \textbf{@include}, los diferentes archivos ubicados en el directorio \textbf{conf.d} de la siguiente manera:
 
 \begin{lstlisting}[style=logstyle]
 @include "/etc/syslog-ng/conf.d/00-options.conf"
@@ -173,14 +173,76 @@ filter f_bras {
     \item \textbf{f\_sdata:} Este filtro utiliza una estrategia diferente a los previamente mencionados, no analiza IP de origen para enrutar mensajes a los diferentes destinos sino que analiza el contenido del campo \textbf{SDATA} del mensaje. La funcion \textbf{match()} busca una expresion regular que comience con "[". Por lo tanto, el filtro permite identificar logs que si tienen structuer 
 \end{enumerate}
 
-\section{Formateo de logs: Analisis de sintaxis (parsers) y plantillas (templates)}
+\section{Formateo de logs: Analisis de sintaxis (parsers) y plantillas (templates) por vendor}
 La carpeta \texttt{"Parsers"} contiene los archivos de configuracion que definen los analizadores de sintaxis diseñados para extraer los campos deseados de los log de diferentes fabricantes. Una vez los campos han sido extraidos y procesados, se usan las plantillas definidas en la carpeta \texttt{"Templates"} para formatear los registros en JSON y asi tener una estructura homogenea que pueda ser procesada por el Wazuh manager.
 
 \subsection{Huawei}
 PENDIENTE
 
-\section{Rotación, compresión y retención de logs}
+\subsection{Juniper}
 PENDIENTE
+
+\section{Rotación, compresión y retención de logs}
+La gestión de almacenamiento, compresión y ciclo de vida de los logs almacenados por syslog-ng en el sistema se maneja a través de la herramienta del sistema operativo llamada logrotate. Dado que los dispositivos de red envían miles de eventos diarios, los archivos de texto plano crecerían indefinidamente hasta saturar el disco si no se implementan estas políticas de retencion.
+
+Es importante aclarar que, operativamente, syslog-ng no rota sus propios archivos de registro, simplemente se limita a escribir de forma continua los logs en los archivos destino. La configuración garantiza la disponibilidad de los datos para el análisis de seguridad en tiempo real realizada por Wazuh (wazuh-analysisd) y el almacenamiento eficiente a largo plazo para auditoría, cumpliendo con una política estricta de retención de 6 meses.
+
+Para definir que archivos se van a rotar, comprimir o eliminar hay que establecer las rutas en un archivo de configuración de logrotate, en este caso, el archivo \texttt{/etc/logrotate.d/syslog-ng} contiene la configuración específica para los archivos de logs generados por syslog-ng.
+
+\begin{lstlisting}[style=logstyle,
+    caption={Fragmento de código de configuración de logrotate correspondiente a los logs de edge routers Juniper MX480.}
+]
+# Logs de edge routers juniper MX480 | rotacion semanal | retencion de 6 meses
+/data/var/log/juniper_er.log {
+    weekly
+    rotate 26
+    maxage 183
+    compress
+    delaycompress
+    dateext
+    missingok
+    notifempty
+    olddir /data/var/log/archive/juniper_er
+
+    postrotate
+        syslog-ng-ctl reopen >/dev/null 2>&1 || true
+    endscript
+}
+\end{lstlisting}
+
+La configuracion presente en /etc/logrotate.d/syslog-ng se aplica a los siguientes archivos de logs:
+
+\input{Tablas/logrotate_destinos.tex}
+
+* Los logs del sistema operativo comprenden: mail.warn, mail.err, mail.log, daemon.log, kern.log, auth.log, user.log, lpr.log, cron.log, debug, messages y error. Estos archivos son gestionados por syslog-ng y logrotate de manera predeterminada e independiente.
+
+Para cada archivo de log, se establecen atributos que definen las directivas de rotación y retención, las cuales se detallan a continuación:
+
+\begin{description}
+    \item[\texttt{weekly}] \textbf{Frecuencia de rotación:} Especifica que la evaluación y ejecución del ciclo de rotación se realiza una vez por semana.
+
+    \item[\texttt{rotate 26}] \textbf{Límite de archivos retenidos:} Mantiene un máximo de 26 versiones históricas del archivo en el directorio de archivo. Al combinarse con la frecuencia semanal, garantiza una retención exacta de 26 semanas (6 meses).
+
+    \item[\texttt{maxage 183}] \textbf{Antigüedad máxima de almacenamiento:} Fuerza la eliminación automática de cualquier archivo archivado cuya antigüedad supere los 183 días (6 meses), asegurando la depuración del sistema de archivos independientemente del número de rotaciones.
+
+    \item[\texttt{compress}] \textbf{Compresión de datos:} Comprime los archivos rotados utilizando \texttt{gzip} por defecto, reduciendo sustancialmente el consumo de almacenamiento en la partición \texttt{/data/}.
+
+    \item[\texttt{delaycompress}] \textbf{Compresión diferida:} Aplaza la compresión del archivo rotado más reciente hasta el ciclo de rotación subsiguiente. Evita bloqueos y pérdida de eventos en caso de que un proceso (como \texttt{syslog-ng} o el agente de Wazuh) mantenga temporalmente abierto el descriptor del archivo.
+
+    \item[\texttt{dateext}] \textbf{Estampa del tiempo en el nombre:} Utiliza un sufijo con la fecha (\texttt{YYYYMMDD}) en lugar de una numeración secuencial (\texttt{.1}, \texttt{.2}), lo que facilita la identificación cronológica durante investigaciones forenses y análisis de logs con herramientas externas.
+
+    \item[\texttt{missingok}] \textbf{Tolerancia a ausencias:} Evita que \texttt{logrotate} genere una alerta de error o aborte la ejecución si un archivo de log específico no se ha creado aún en el disco.
+
+    \item[\texttt{notifempty}] \textbf{Cancelación en archivos vacíos:} Impide la rotación si el archivo de log carece de registros (0 bytes), evitando la proliferación de archivos vacíos y optimizando el uso de inodos.
+
+    \item[\texttt{olddir}] \textbf{Directorio de destino del histórico:} Traslada los archivos rotados a una ruta secundaria especificada (\texttt{/data/var/log/archive/...}), aislando el historial del directorio de logs activos para mantener eficiente el escaneo del agente de Wazuh.
+
+    \item[\texttt{postrotate ... endscript}] \textbf{Instrucción de señalización al servicio:} Delimita el comando de shell a ejecutar una vez finalizado el desplazamiento del archivo. Utiliza \texttt{syslog-ng-ctl reopen} para indicarle a \texttt{syslog-ng} que cierre los descriptores antiguos y abra los nuevos sin reiniciar el demonio, evitando la pérdida de paquetes syslog en el socket de red. En el caso de los logs del sistema, el comando invoke-rc.d syslog-ng reload > /dev/null es el mecanismo estándar en sistemas basados en Debian y Ubuntu para ordenar a syslog-ng que libere los descriptores de archivo que fueron rotados por logrotate.
+\end{description}
+
+\textbf{Mecanismo de ejecución:} \texttt{logrotate} no opera como un demonio en segundo plano sino que permanece inactivo hasta ser disparado por el temporizador \texttt{logrotate.timer}, ejecutando la rotación de archivos de forma puntual (\textit{Type=oneshot}).
+
+Cuando se cumple el horario de ejecución, systemd despierta a logrotate.service, el cual revisa los archivos, evalúa si cumplen las reglas de tamaño o tiempo y ejecuta el proceso de rotación, compresión y retención, para luego, finalizar inmediatamente su proceso.
 
 \section{Forwarding de logs en JSON hacia Wazuh}
 PENDIENTE
@@ -225,8 +287,8 @@ Es imperativo destacar que el motor de análisis de Wazuh (\texttt{wazuh-analysi
 \section{Visualización y dashboards}
 PENDIENTE
 
-\section{Retencion de indices y alertas}
-Por defecto, Wazuh almacena tanto los índices como los archivos de alertas de forma indefinida y no trae una política de borrado automático preconfigurada. Si no se define un límite manualmente, el sistema acumulará datos hasta llenar el disco por completo.
+\section{Gestión del almacenamiento de alertas y archivos en Wazuh}
+Por defecto, Wazuh almacena tanto los índices como los archivos de alertas de forma indefinida y no trae una política de borrado automático preconfigurada. Si no se define un límite manualmente, el sistema acumulará datos hasta llenar el disco por completo. La documentacion oficial de Wazuh recomienda establecer un periodo de retencion de 180 dias para los indices y 90 dias para los archivos de alertas, esto debido a que el motor de busqueda esta optimizado para almacenar grandes cantidades de datos y realizar busquedas rapidas, mientras que los archivos de texto plano son mas lentos y consumen mas recursos del sistema \cite{wazuh_index_lifecycle}.
 
 El almacenamiento en Wazuh se divide en dos capas, el almacenamiento de indices en el motor de busqueda OpenSearch y el almacenamiento local de alertas en archivos de texto plano, asi que para cada capa se definio una política de retencion diferente basado en su funcionamiento.
 
@@ -315,8 +377,197 @@ Los indices ingresan al estado \textit{inicial} donde se analiza periodicamente 
 
 El otro metodo para establecer la politica de retencion, depende de la interfaz grafica de Wazuh Dashboard, en la seccion de menu $\textit{Indexer management} \rightarrow \textit{Index Management} \rightarrow \textit{State management policies}$
 
-\subsection{Wazuh manager (archivo local)}
-PENDIENTE PENDIENTE
+Dentro de este apartado se debe seleccionar la opcion de create policy, donde habra disponbles dos opciones para estructurar politicas, usando la GUI y el editor JSON.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Figuras/editor_politica.png}
+    \caption{Editor de politicas de retencion de indices en Wazuh Dashboard.}
+\end{figure}
+
+En este ultimo caso, se puede copiar el mismo contenido que se muestra en el ejemplo anterior, se le asigna el nombre de politica, luego se guarda y se aplica a los indices deseados.
+
+Si se realiza la configuracion mediante el editor visual, se debe establecer el nombre de la politica y la descripcion. Luego se deben definir los estador y las transiciones, en este caso solo se requiere un estado inicial y un estado de eliminacion de indices. En el estado de eliminacion se debe agregar la accion de borrado y establecer la condicion de transicion a 180 dias.
+
+\subsubsection{Arquitectura de politicas por estados}
+La gestión del ciclo de vida de los datos indexados en OpenSearch (administrado a través de la interfaz gráfica de Wazuh Dashboard) se implementa mediante el motor de \textbf{Index State Management (ISM)}. A diferencia de un modelo de ejecución lineal o basado en scripts imperativos, el editor visual de ISM opera bajo el modelo de una Máquina de Estados Finitos (\textit{Finite State Machine} - FSM).
+
+Cada estado representa una fase funcional en la vida útil del índice. Dentro de un estado se configuran dos elementos críticos:
+
+\begin{description}
+    \item[\textbf{Acciones (\texttt{Actions}):}] Operaciones atómicas que el motor de OpenSearch ejecuta sobre los índices mientras permanecen en dicho estado:
+    \begin{itemize}
+        \item \texttt{rollover}: Cierra la fase de escritura del índice actual y crea uno nuevo cuando se cumple un límite de tamaño o tiempo.
+        \item \texttt{read\_only}: Bloquea la modificación de datos para garantizar la integridad histórica.
+        \item \texttt{replica\_count}: Modifica el número de réplicas asignadas (ej. ajustar a $0$ réplicas en nodos independientes).
+        \item \texttt{forcemerge}: Consolida los segmentos de almacenamiento de Lucene para optimizar las consultas y reducir la sobrecarga de lectura.
+        \item \texttt{delete}: Elimina físicamente el índice y sus fragmentos del almacenamiento en disco.
+    \end{itemize}
+
+    \item[\textbf{Transiciones (\texttt{Transitions}):}] Definen la trayectoria de salida hacia el siguiente estado objetivo (\textit{Target state}).
+\end{description}
+
+\subsubsection{Condiciones de transición}
+Determinan el momento exacto en que un índice debe abandonar su estado actual. Las condiciones más utilizadas en el entorno Wazuh incluyen:
+
+\begin{itemize}
+    \item \texttt{min\_index\_age}: Tiempo transcurrido desde la creación inicial del índice (ej. \texttt{183d} para retención de 6 meses).
+    \item \texttt{min\_rollover\_age}: Tiempo transcurrido únicamente desde que se completó la acción de \textit{rollover}.
+    \item \texttt{min\_primary\_shard\_size}: Tamaño acumulado en el fragmento primario (ej. \texttt{30gb}).
+    \item \texttt{min\_doc\_count}: Cantidad de documentos indexados acumulados.
+\end{itemize}
+
+Una vez creada o creadas las politicas, se debe acceder a $\textit{Indexer management} \rightarrow \textit{Index Management} \rightarrow \textit{Indexes}$ y seleccionar los indices existentes a los cuales se les aplicara la politica de retencion, dar click en el boton \textbf{Actions} y seleccionar la opcion \textbf{Apply policy}, luego seleccionar la politica deseada y dar click en el boton \textbf{Apply}.
+
+En este apartado se puede ver el estado actual de cada indice, su tamaño, cantidad de documentos y las politicas que tiene asignadas.
+
+\subsection{Wazuh Manager (archivo local)}
+El servidor central (\textit{Wazuh Manager}) procesa y clasifica continuamente todos los eventos generados por los agentes y las fuentes Syslog. Además de enviar los eventos normalizados hacia el motor de búsqueda (\textit{Wazuh Indexer / OpenSearch}), el nodo gestiona un almacenamiento persistente en el sistema de archivos local (\texttt{/var/ossec/logs/}) organizado en dos flujos principales: \textbf{alertas clasificadas} (\texttt{alerts}) y \textbf{eventos brutos recopilados} (\texttt{archives}).
+
+\subsubsection{Ubicaciones y Estructura de Directorios}
+
+Los archivos de registro procesados por el motor de análisis (\texttt{wazuh-analysisd}) se dividen en dos rutas físicas principales según el resultado del motor de reglas:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Directorio de Alertas (\texttt{/var/ossec/logs/alerts/}):}
+    Almacena únicamente los eventos que coincidieron con alguna regla de seguridad cuya severidad superó el umbral mínimo de alerta.
+    \begin{itemize}
+        \item \textbf{Ruta activa de escritura:} \texttt{/var/ossec/logs/alerts} y los archivos activos son \texttt{alerts.json} y \texttt{alerts.log}.
+        \item \textbf{Estructura histórica comprimida:} \texttt{/var/ossec/logs/alerts/YYYY/Mon} y los archivos se nombran \texttt{ossec-alerts-DD.json.gz} (donde \texttt{YYYY} representa el año, \texttt{Mon} el mes abreviado y \texttt{DD} el día).
+    \end{itemize}
+
+    \item \textbf{Directorio de Archivos Brutos / RAW (\texttt{/var/ossec/logs/archives/}):}
+    Almacena la totalidad de los eventos entrantes recibidos por el servidor, independientemente de si generaron o no una alerta de seguridad (\textit{log ingestion complete}).
+    \begin{itemize}
+        \item \textbf{Ruta activa de escritura:} \texttt{/var/ossec/logs/archives} y los archivos activos son \texttt{archives.json} y \texttt{archives.log}.
+        \item \textbf{Estructura histórica comprimida:} \texttt{/var/ossec/logs/archives/YYYY/Mon} y los archivos se nombran \texttt{ossec-archives-DD.json.gz}.
+    \end{itemize}
+\end{enumerate}
 
 \section{Integración de Wazuh con Zabbix}
-PENDIENTE
+Esta caracteristica se implementó con el objetivo de unificar la correlación de seguridad (SOC) con la observabilidad de infraestructura (NOC) en tiempo real. Esta integración actúa como mecanismo de exportación e inyección de métricas. En lugar de mantener a Zabbix realizando polling constante de ciertas alertas sobre los equipos de red, el sistema utiliza un esquema de empuje por eventos (push-based monitoring) apoyandose en las capacidades de Wazuh.
+
+Toda la informacion sigue un flujo diseñado para ser totalmente independiente de la interfaz web de Wazuh, evitando la necesidad de realizar consultas periódicas a la API REST del nodo Manager.
+
+\subsection{Desglose de servicios y sub-servicios por componente}
+
+\subsubsection{Dispositivos de Red de Origen (Network Devices)}
+Corresponde a la capa de generación de eventos de infraestructura. En esta arquitectura se toma como nodo representativo el router \texttt{GUAB\_MX480\_01} (dirección IP: \texttt{10.29.13.25}).
+
+\begin{itemize}
+    \item \textbf{Servicio Principal:} Generación e Emisión de Eventos del Sistema (JunOS).
+    \item \textbf{Sub-servicio \texttt{eventd} (Event Management Daemon):} Proceso interno encargando de monitorear y capturar los eventos generados por el chasis, tarjetas de línea, interfaces y procesos del sistema operativo.
+    \item \textbf{Sub-servicio \texttt{syslogd} (System Logging Daemon):} Proceso del sistema responsable de dar formato estándar Syslog a los eventos generados por \texttt{eventd} y transmitirlos hacia los servidores de agregación externos.
+    \item \textbf{Protocolo y Transporte:} Transmisión de mensajes Syslog cumpliendo los estándares RFC 5424 / RFC 3164 a través del protocolo de transporte \texttt{UDP} por el puerto \texttt{514}.
+\end{itemize}
+
+\subsubsection{Agregador Central de Logs (\texttt{syslog-ng})}
+Nodo intermediario encargado del filtrado, parsing, estructuración en JSON y reenvío de logs. Operado sobre un servidor Ubuntu 24.04 (dirección IP: \texttt{10.29.10.75}) ejecutando \texttt{syslog-ng} v4.3.1.
+
+\begin{itemize}
+    \item \textbf{Servicio Principal:} Colector Centralizado de Logs (\texttt{syslog-ng.service}).
+    \item \textbf{Verificación de Estado:} Ejecución del comando \texttt{systemctl status syslog-ng}.
+    \item \textbf{Sub-servicios y Componentes del Pipeline (\texttt{/etc/syslog-ng/syslog-ng.conf})}. Sección~\ref{sec:syslog-ng.conf} (página~\pageref{sec:syslog-ng.conf}) para detalles de configuración.
+    \item \textbf{Sub-servicios de Mantenimiento y Rotación:}
+    \begin{itemize}
+        \item \textbf{Sub-servicio \texttt{logrotate}:} Configuración localizada en \texttt{/etc/logrotate.d/syslog-ng} (incluida desde \texttt{/etc/logrotate.d}) encargada de la rotación semanal y compresión de archivos de registros antiguos.
+        \item \textbf{Sub-servicio \texttt{logrotate.timer}:} Temporizador de \texttt{systemd} encargado de desencadenar la ejecución periódica de \texttt{logrotate}.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Servidor SIEM (Wazuh Manager)}
+Capa de análisis de seguridad, correlación de eventos e ingesta de alertas. Operado sobre el servidor con dirección IP \texttt{10.27.27.198}.
+
+\begin{itemize}
+    \item \textbf{Servicio Principal:} Gestor Central Wazuh (\texttt{wazuh-manager}).
+    \item \textbf{Verificación de Estado:} Ejecución del binario \texttt{/var/ossec/bin/wazuh-control status}.
+    \item \textbf{Sub-servicio \texttt{wazuh-remoted} (Receptor de Red):}
+    \begin{itemize}
+        \item Encargado de la recepción de eventos remotos.
+        \item Configurado en \texttt{/var/ossec/etc/ossec.conf} bajo el bloque \texttt{<remote>} escuchando protocolo Syslog sobre puerto \texttt{UDP:514}.
+        \item Restricción de acceso mediante direcciones IP autorizadas (\texttt{<allowed-ips>}: \texttt{10.29.10.75} y \texttt{10.27.27.198}).
+    \end{itemize}
+    \item \textbf{Sub-servicio \texttt{wazuh-analysisd} (Motor de Análisis y Correlación):}
+    \begin{itemize}
+        \item Procesa los logs recibidos por \texttt{wazuh-remoted}.
+        \item Aplica la decodificación JSON del payload.
+        \item Evalúa las reglas de correlación del sistema localizadas en \texttt{/var/ossec/ruleset/rules} (reglas predefinidas) y en \texttt{/var/ossec/etc/rules/local\_juniper.xml} (reglas personalizadas basadas en \texttt{message-id} y contenido del mensaje).
+        \item Genera eventos y alertas de seguridad escritas dinámicamente en los archivos \texttt{/var/ossec/logs/alerts/alerts.json} y \texttt{alerts.log}.
+    \end{itemize}
+    \item \textbf{Sub-servicio \texttt{wazuh-integratord} (Módulo de Integraciones Externas):}
+    \begin{itemize}
+        \item Proceso encargado de ejecutar scripts de integración de terceros al dispararse alertas clasificadas en grupos específicos.
+        \item Configuración en \texttt{ossec.conf} mediante la etiqueta \texttt{<integration>}:
+        \begin{itemize}
+            \item \texttt{<name>custom-zabbix</name>}
+            \item \texttt{<alert\_format>json</alert\_format>}
+            \item \texttt{<group>temperature</group>}
+        \end{itemize}
+        \item Registra la salida y los logs de ejecución en \texttt{/var/ossec/logs/ossec.log}.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Middleware de Integración (\texttt{custom-zabbix})}
+Módulo de adaptación script de procesamiento intermedio alojado en el servidor Wazuh bajo la ruta \texttt{/var/ossec/integrations/custom-zabbix}.
+
+\begin{itemize}
+    \item \textbf{Servicio Principal:} Script ejecutable de integración Bash + \texttt{jq}.
+    \item \textbf{Sub-procesador JSON (\texttt{jq}):} Extrae campos clave del archivo de alerta generado (\texttt{alerts.json}) como niveles, descripciones, nombres de hosts y valores numéricos.
+    \item \textbf{Sub-modulo Constructor:} Ensambla el payload con el formato requerido por la API de Zabbix y define las variables operativas.
+    \item \textbf{Sub-modulo Emisor (\texttt{zabbix\_sender}):} Binario ejecutable que transporta la métrica procesada mediante el protocolo nativo de Zabbix hacia el puerto escuchador del Zabbix Proxy.
+\end{itemize}
+
+\subsubsection{Servidor de Monitoreo Central (Zabbix Proxy / Server)}
+Componente final de ingesta de métricas y presentación de alertas operativas (Zabbix Proxy en IP \texttt{10.29.10.13}).
+
+\begin{itemize}
+    \item \textbf{Servicio Principal:} Proxy de Monitoreo Zabbix (\texttt{zabbix-proxy}).
+    \item \textbf{Sub-servicio Zabbix Trapper:} Ítem/Escuchador tipo *trapper* preparado en Zabbix para recibir la métrica empujada directamente por \texttt{zabbix\_sender}.
+    \item \textbf{Sub-servicio de Registro de Errores (Error Log):} Captura excepciones, rechazos de datos o fallos de parseo en el flujo entrante desde la integración.
+\end{itemize}
+
+\subsection{Flujo Secuencial de la Información}
+
+El proceso de extremo a extremo para la captura, procesamiento y notificación de eventos sigue el orden cronológico detallado a continuación:
+
+\begin{enumerate}
+    \item \textbf{Generación y Transmisión del Log (Paso 1):}
+    Los demonios del router Juniper (\texttt{eventd} y \texttt{syslogd}) detectan un evento interno del chasis en \texttt{GUAB\_MX480\_01} (\texttt{10.29.13.25}) y emiten un registro Syslog estándar (RFC 5424/3164) a través del puerto \texttt{UDP:514} hacia la IP \texttt{10.29.10.75}.
+
+    \item \textbf{Procesamiento y Reenvío en \texttt{syslog-ng} (Paso 2):}
+    El servicio \texttt{syslog-ng} en Ubuntu captura el paquete mediante su \texttt{source()}, aplica el \texttt{filter()} por IP de origen, procesa el texto con su \texttt{parser()}, le da estructura estructurada con su \texttt{template()} JSON y lo reenvía a través del puerto \texttt{514} hacia el servidor Wazuh (\texttt{10.27.27.198}).
+
+    \item \textbf{Recepción, Correlación y Alerta en Wazuh (Paso 3):}
+    El sub-servicio \texttt{wazuh-remoted} recibe la traza JSON. Posteriormente, \texttt{wazuh-analysisd} procesa la información aplicando las reglas de correlación personalizadas contenidas en \texttt{local\_juniper.xml}. Al coincidir con una regla del grupo (ej. \texttt{temperature}), escribe la alerta resultante en \texttt{/var/ossec/logs/alerts/alerts.json}.
+
+    \item \textbf{Invocación de la Integración (Paso 4):}
+    El demonio \texttt{wazuh-integratord} detecta la nueva alerta del grupo \texttt{temperature} e invoca automáticamente el script customizado localizado en \texttt{/var/ossec/integrations/custom-zabbix}. Registra cualquier novedad en \texttt{/var/ossec/logs/ossec.log}.
+
+    \item \textbf{Extracción, Formateo e Ingesta en Zabbix (Paso 5):}
+    El script ejecutable utiliza la herramienta \texttt{jq} para parsear los datos de \texttt{alerts.json}, construye los parámetros correspondientes y ejecuta la herramienta \texttt{zabbix\_sender} para inyectar la métrica de forma directa al escuchador \textbf{Zabbix Trapper} en la dirección IP \texttt{10.29.10.13}.
+\end{enumerate}
+
+\subsection{Resumen de Archivos de Configuración y Rutas Críticas}
+
+\begin{longtable}{p{0.20\textwidth} p{0.44\textwidth} p{0.30\textwidth}}
+\caption{Matriz de componentes, archivos de configuración y binarios del sistema.} \label{tab:matriz_componentes} \\
+\toprule
+\textbf{Componente} & \textbf{Ruta de Archivo / Comando} & \textbf{Función / Descripción} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+syslog-ng & \texttt{/etc/syslog-ng/syslog-ng.conf} & Configuración del pipeline (source, filter, parser, dest). \\
+syslog-ng & \texttt{/etc/logrotate.d/syslog-ng} & Definición de política de rotación de logs. \\
+syslog-ng & \texttt{systemctl status syslog-ng} & Comando de verificación de estado del servicio. \\
+\midrule
+Wazuh Manager & \texttt{/var/ossec/etc/ossec.conf} & Configuración de socket remoted e integraciones. \\
+Wazuh Manager & \texttt{/var/ossec/etc/rules/local\_juniper.xml} & Reglas de correlación personalizadas por vendor. \\
+Wazuh Manager & \texttt{/var/ossec/bin/wazuh-control status} & Comando de verificación de servicios ossec/wazuh. \\
+Wazuh Manager & \texttt{/var/ossec/logs/alerts/alerts.json} & Archivo de alertas generadas en formato JSON. \\
+Wazuh Manager & \texttt{/var/ossec/logs/ossec.log} & Registros de ejecución e integración de Wazuh. \\
+\midrule
+Middleware & \texttt{/var/ossec/integrations/custom-zabbix} & Script bash + jq para envío vía zabbix\_sender. \\
+\midrule
+Zabbix Proxy & \texttt{10.29.10.13} & Zabbix Trapper y registro de errores de ingesta. \\
+\end{longtable}

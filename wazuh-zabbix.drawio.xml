@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="5.0 (X11)">
+  <diagram name="Page-1" id="9361dd3d-8414-5efd-6122-117bd74ce7a7">
+    <mxGraphModel dx="1806" dy="1013" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1.5" pageWidth="850" pageHeight="1100" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-143" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#FF9999;" value="" vertex="1">
+          <mxGeometry height="325" width="160" x="3028" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-139" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#99FF99;" value="" vertex="1">
+          <mxGeometry height="720" width="265" x="1445" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-138" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#FFCC99;" value="" vertex="1">
+          <mxGeometry height="720" width="200" x="1105" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-133" parent="1" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=110;height=35;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="Servidor wazuh&lt;br&gt;(10.27.27.198)" vertex="1">
+          <mxGeometry height="730" width="1150" x="1840" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-134" parent="1" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=90;height=35;" value="zabbix proxy&lt;br&gt;(10.29.10.13)" vertex="1">
+          <mxGeometry height="325" width="160" x="3028" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-95" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};size=90;fillColor=#FFFFFF;strokeColor=light-dark(#000000,#5C79A3);" value="JUNIPER DAEMONS&lt;br&gt;eventd (Event Management Daemon)&lt;br&gt;syslogd (System Logging Daemon)" vertex="1">
+          <mxGeometry height="260" width="160" x="1125" y="295" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-96" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#FFFFFF;strokeColor=#000000;" value="/etc/syslog-ng/syslog-ng.conf" vertex="1">
+          <mxGeometry height="400" width="120" x="1572" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-97" parent="e2yaPiPzw0CLVWs9AFY8-96" style="html=1;points=[[0,0,0,0,5],[0,1,0,0,-5],[1,0,0,0,5],[1,1,0,0,-5]];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#D30000;" value="" vertex="1">
+          <mxGeometry height="140" width="10" x="55" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-100" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#FFFFFF;strokeColor=#000000;" value="custom-zabbix&lt;br&gt;[wazuh-integratord]" vertex="1">
+          <mxGeometry height="480" width="120" x="2530" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-101" parent="e2yaPiPzw0CLVWs9AFY8-100" style="html=1;points=[[0,0,0,0,5],[0,1,0,0,-5],[1,0,0,0,5],[1,1,0,0,-5]];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#D30000;" value="" vertex="1">
+          <mxGeometry height="140" width="10" x="75" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-104" parent="1" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=180;height=40;fillColor=default;fontStyle=0" value="&lt;span&gt;Network devices&lt;br&gt;GUAB_MX480_01 (10.29.13.25)&lt;/span&gt;" vertex="1">
+          <mxGeometry height="720" width="200" x="1105" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-105" parent="1" style="html=1;points=[[0,0,0,0,5],[0,1,0,0,-5],[1,0,0,0,5],[1,1,0,0,-5]];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#D30000;" value="" vertex="1">
+          <mxGeometry height="140" width="10" x="1200" y="445" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-106" edge="1" parent="1" source="e2yaPiPzw0CLVWs9AFY8-105" style="endArrow=open;endFill=0;html=1;edgeStyle=orthogonalEdgeStyle;align=left;verticalAlign=top;rounded=0;labelBackgroundColor=#FFFF99;" value="Logs mediante syslog (RFC 5424/3164)&lt;br&gt;[UDP:514]">
+          <mxGeometry relative="1" x="-0.8418" y="-5" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="1460" y="515.06" as="sourcePoint" />
+            <mxPoint x="1480" y="515.06" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-107" connectable="0" parent="e2yaPiPzw0CLVWs9AFY8-106" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontStyle=1" value="1" vertex="1">
+          <mxGeometry relative="1" x="-1" as="geometry">
+            <mxPoint x="10" y="-25" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-108" parent="1" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=142;height=60;" value="Servidor Ubuntu 24.04&amp;nbsp;&lt;br&gt;syslog-ng v4.3.1&lt;br&gt;(10.29.10.75)" vertex="1">
+          <mxGeometry height="720" width="265" x="1445" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-109" parent="1" style="verticalAlign=top;align=left;overflow=fill;html=1;whiteSpace=wrap;" value="&lt;p style=&quot;margin: 4px 0px 0px; text-align: center; text-decoration: underline;&quot;&gt;&lt;b&gt;Flujo de informacion&lt;br&gt;en syslog-ng&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-style:solid;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;&quot;&gt;1. source()&lt;br&gt;Empieza con una fuente de informacion (los logs de la RMS)&lt;br&gt;2. filter()&lt;br&gt;Filtra por dirección IP para agruparlos y pasarlos por el parser, si aplica&lt;br&gt;3. parser()&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:8px;&quot;&gt;Extracción de campos en los logs&lt;br&gt;4. template()&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:8px;&quot;&gt;Arma la estructura Json para ser enviada&lt;br&gt;5. destination()&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:8px;&quot;&gt;Se envia la informacion a Wazuh&lt;/p&gt;" vertex="1">
+          <mxGeometry height="260" width="188" x="1612" y="685" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-112" parent="1" style="verticalAlign=top;align=left;spacingTop=8;spacingLeft=2;spacingRight=12;shape=cube;size=10;direction=south;fontStyle=0;textShadow=0;fontFamily=Courier New;whiteSpace=wrap;fontSize=10;" value="&lt;remote&gt;&#xa;  &lt;connection&gt;syslog&lt;/connection&gt;&#xa;  &lt;port&gt;514&lt;/port&gt;&#xa;  &lt;protocol&gt;udp&lt;/protocol&gt;&#xa;  &lt;allowed-ips&gt;10.29.10.75&lt;/allowed-ips&gt;&#xa;  &lt;allowed-ips&gt;10.27.27.198&lt;/allowed-ips&gt;&#xa;&lt;/remote&gt;" vertex="1">
+          <mxGeometry height="100" width="265" x="1818" y="1395" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-114" parent="1" style="verticalAlign=top;align=left;overflow=fill;html=1;whiteSpace=wrap;" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;text-decoration:underline;&quot;&gt;&lt;b&gt;Analysis engine&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-style:solid;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;&quot;&gt;- Aplica decodificacion JSON&lt;br&gt;- Evalua reglas de correlacion&lt;br&gt;- Genera alertas -&amp;gt; alerts.log/alerts.json&lt;/p&gt;" vertex="1">
+          <mxGeometry height="120" width="140" x="2410" y="635" as="geometry" />
+        </mxCell>
+        <UserObject label="&lt;font style=&quot;font-size: 10px;&quot;&gt;Logea salida en&lt;br&gt;/var/ossec/logs/ossec.log&lt;/font&gt;" link="/var/ossec/logs/ossec.log" id="e2yaPiPzw0CLVWs9AFY8-120">
+          <mxCell edge="1" parent="1" style="endArrow=open;endFill=0;html=1;edgeStyle=orthogonalEdgeStyle;align=right;verticalAlign=middle;rounded=0;labelBackgroundColor=#FFFF99;">
+            <mxGeometry relative="1" x="-1" y="20" as="geometry">
+              <mxPoint as="offset" />
+              <mxPoint x="2605" y="555" as="sourcePoint" />
+              <mxPoint x="2490" y="555" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </UserObject>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-123" edge="1" parent="1" source="rI9CLWDUfw0xqLQdfrcL-1" style="endArrow=open;endFill=0;html=1;edgeStyle=orthogonalEdgeStyle;align=left;verticalAlign=top;rounded=0;labelBackgroundColor=#FFFF99;fontSize=10;exitX=1;exitY=0.865;exitDx=0;exitDy=0;exitPerimeter=0;" value="Invoca script zabbix-trapper desde&lt;br&gt;/var/ossec/integrations">
+          <mxGeometry relative="1" x="0.6151" as="geometry">
+            <mxPoint y="1" as="offset" />
+            <mxPoint x="2437.5" y="495" as="sourcePoint" />
+            <mxPoint x="2600" y="495.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-124" connectable="0" parent="e2yaPiPzw0CLVWs9AFY8-123" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontStyle=1" value="4" vertex="1">
+          <mxGeometry relative="1" x="0.6151" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-130" parent="1" style="verticalAlign=top;align=left;spacingTop=8;spacingLeft=2;spacingRight=12;shape=cube;size=10;direction=south;fontStyle=0;textShadow=0;fontFamily=Courier New;whiteSpace=wrap;fontSize=10;" value="&lt;integration&gt;&#xa;  &lt;name&gt;custom-zabbix&lt;/name&gt;&#xa;  &lt;alert_format&gt;json&lt;/alert_format&gt;&#xa;  &lt;group&gt;temperature&lt;/group&gt;&#xa;&lt;/integration&gt;" vertex="1">
+          <mxGeometry height="75" width="228" x="2138" y="1410" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-128" parent="1" style="verticalAlign=top;align=left;overflow=fill;html=1;whiteSpace=wrap;labelBackgroundColor=none;" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;text-decoration:underline;&quot;&gt;&lt;b&gt;Script bash + jq&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot; style=&quot;border-style:solid;&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:8px;&quot;&gt;1. jq extrae campos de alerts.json&lt;br&gt;2. Construye payload y parametros&lt;br&gt;3. Ejecuta zabbix_sender&lt;/p&gt;" vertex="1">
+          <mxGeometry height="120" width="140" x="2590" y="635" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-131" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#FFFFFF;strokeColor=#000000;" value="Zabbix trapper" vertex="1">
+          <mxGeometry height="260" width="120" x="3048" y="295" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-132" parent="e2yaPiPzw0CLVWs9AFY8-131" style="html=1;points=[[0,0,0,0,5],[0,1,0,0,-5],[1,0,0,0,5],[1,1,0,0,-5]];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#D30000;" value="" vertex="1">
+          <mxGeometry height="140" width="10" x="55" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-141" edge="1" parent="1" source="e2yaPiPzw0CLVWs9AFY8-97" style="endArrow=open;endFill=0;html=1;edgeStyle=orthogonalEdgeStyle;align=left;verticalAlign=top;rounded=0;labelBackgroundColor=#FFFF99;" target="rI9CLWDUfw0xqLQdfrcL-1" value="">
+          <mxGeometry relative="1" x="-0.6997" as="geometry">
+            <Array as="points" />
+            <mxPoint x="1685" y="514.5" as="sourcePoint" />
+            <mxPoint x="1800" y="525" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-142" connectable="0" parent="e2yaPiPzw0CLVWs9AFY8-141" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontStyle=1" value="2" vertex="1">
+          <mxGeometry relative="1" x="-1" as="geometry">
+            <mxPoint x="-48" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2yaPiPzw0CLVWs9AFY8-144" connectable="0" parent="e2yaPiPzw0CLVWs9AFY8-141" style="edgeLabel;html=1;align=left;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=#FFFF99;" value="Forwarding logs estructurados&lt;br&gt;(JSON)&lt;br&gt;Envia a Wazuh, Wazuh escucha por&lt;br&gt;el puerto 514" vertex="1">
+          <mxGeometry relative="1" x="-0.4958" y="-2" as="geometry">
+            <mxPoint x="-86" y="38" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="DecaSVhjXEhOWjryw2Nf-1" parent="1" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" value="Cada vendor envía sus logs con sus procesos específicos. Juniper se basa en &lt;b&gt;eventd&lt;/b&gt; y &lt;b&gt;syslogd&lt;/b&gt;" vertex="1">
+          <mxGeometry height="100" width="180" x="1115" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="DecaSVhjXEhOWjryw2Nf-2" parent="1" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" value="&lt;b&gt;ossec.conf&lt;/b&gt;&lt;br&gt;Encargado de crear el socket para escuchar en puerto 514 y recibir los logs" vertex="1">
+          <mxGeometry height="100" width="180" x="1780" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="DecaSVhjXEhOWjryw2Nf-4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;defaultLabelBackgroundColor=gap;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="DecaSVhjXEhOWjryw2Nf-2" value="">
+          <mxGeometry height="50" relative="1" width="50" x="-0.2028" as="geometry">
+            <Array as="points">
+              <mxPoint x="1780" y="390" />
+              <mxPoint x="1780" y="230" />
+            </Array>
+            <mxPoint x="2289.5" y="390" as="sourcePoint" />
+            <mxPoint x="1940" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="DecaSVhjXEhOWjryw2Nf-10" parent="1" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" value="&lt;b&gt;local_juniper.xml&lt;/b&gt;&lt;br&gt;Contiene las reglas de activación de alertas dependiendo de los logs que llegan" vertex="1">
+          <mxGeometry height="100" width="180" x="1987.5" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="DecaSVhjXEhOWjryw2Nf-12" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;defaultLabelBackgroundColor=gap;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="DecaSVhjXEhOWjryw2Nf-10" value="">
+          <mxGeometry height="50" relative="1" width="50" x="-0.0187" as="geometry">
+            <Array as="points">
+              <mxPoint x="2077.5" y="410" />
+            </Array>
+            <mxPoint x="2432" y="410" as="sourcePoint" />
+            <mxPoint x="1940" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="DecaSVhjXEhOWjryw2Nf-13" parent="1" style="html=1;points=[[0,0,0,0,5],[0,1,0,0,-5],[1,0,0,0,5],[1,1,0,0,-5]];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#D30000;" value="" vertex="1">
+          <mxGeometry height="140" width="10" x="2915" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="DecaSVhjXEhOWjryw2Nf-14" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};" value="Error Log" vertex="1">
+          <mxGeometry height="140" width="100" x="2870" y="570" as="geometry" />
+        </mxCell>
+        <mxCell id="T5F8YfGNJqVJgFD9Tb9z-1" parent="1" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" value="Se debe verificar que el demonio esté corriendo.&lt;br&gt;&lt;br&gt;systemctl status syslog-ng" vertex="1">
+          <mxGeometry height="100" width="180" x="1487.5" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="T5F8YfGNJqVJgFD9Tb9z-3" edge="1" parent="1" source="e2yaPiPzw0CLVWs9AFY8-108" style="endArrow=none;dashed=1;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0.501;exitY=-0.003;exitDx=0;exitDy=0;exitPerimeter=0;" target="T5F8YfGNJqVJgFD9Tb9z-1" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="1810" y="480" as="sourcePoint" />
+            <mxPoint x="1860" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="T5F8YfGNJqVJgFD9Tb9z-4" parent="1" style="verticalAlign=top;align=left;spacingTop=8;spacingLeft=2;spacingRight=12;shape=cube;size=10;direction=south;fontStyle=0;textShadow=0;fontFamily=Courier New;whiteSpace=wrap;fontSize=10;" value="Archivo de configuración se compone de:&#xa;&#xa;- Configuracion global&#xa;- Parsers para cada Vendor&#xa;- Templates para cada vendor&#xa;- Configuraciones base:&#xa;options, sources, destinations, filters, logpaths" vertex="1">
+          <mxGeometry height="130" width="265" x="1535" y="990" as="geometry" />
+        </mxCell>
+        <mxCell id="T5F8YfGNJqVJgFD9Tb9z-5" parent="1" style="html=1;whiteSpace=wrap;" value="logrotate&lt;br&gt;&lt;div&gt;Rotacion de logs a archivos comprimidos cada semana&lt;/div&gt;&lt;div&gt;/etc/logrotate.d/syslog-ng&lt;/div&gt;&lt;div&gt;include /etc/logrotate.d&lt;/div&gt;" vertex="1">
+          <mxGeometry height="150" width="110" x="1320" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="T5F8YfGNJqVJgFD9Tb9z-7" parent="1" style="html=1;whiteSpace=wrap;" value="logrotate.timer" vertex="1">
+          <mxGeometry height="50" width="110" x="1487.5" y="745" as="geometry" />
+        </mxCell>
+        <mxCell id="T5F8YfGNJqVJgFD9Tb9z-8" edge="1" parent="1" source="T5F8YfGNJqVJgFD9Tb9z-7" style="endArrow=open;endFill=1;endSize=12;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0;exitY=0.75;exitDx=0;exitDy=0;" target="T5F8YfGNJqVJgFD9Tb9z-5" value="">
+          <mxGeometry relative="1" width="160" as="geometry">
+            <Array as="points">
+              <mxPoint x="1370" y="782.5" />
+            </Array>
+            <mxPoint x="1720" y="610" as="sourcePoint" />
+            <mxPoint x="1880" y="610" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rI9CLWDUfw0xqLQdfrcL-1" parent="1" style="html=1;points=[[0,0,0,0,5],[0,1,0,0,-5],[1,0,0,0,5],[1,1,0,0,-5]];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#D30000;" value="" vertex="1">
+          <mxGeometry height="260" width="10" x="1930" y="455" as="geometry" />
+        </mxCell>
+        <mxCell id="rI9CLWDUfw0xqLQdfrcL-2" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#FFFFFF;strokeColor=#000000;size=85;" value="Recibe wazuh-remoted por medio del demonio&lt;br&gt;wazuh-manager" vertex="1">
+          <mxGeometry height="120" width="100" x="1885" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="rI9CLWDUfw0xqLQdfrcL-3" parent="1" style="html=1;whiteSpace=wrap;" value="&lt;div&gt;Revisar los procesos de wazuh manager:&lt;br&gt;/var/ossec/bin/wazuh-control status&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Archivos relacionados:&lt;/div&gt;&lt;div&gt;/var/ossec/etc/ossec.conf&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="228" x="1810" y="1180" as="geometry" />
+        </mxCell>
+        <mxCell id="rI9CLWDUfw0xqLQdfrcL-4" parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#FFFFFF;strokeColor=#000000;size=85;" value="wazuh-analysisd por medio del wazuh-manager, analiza las reglas en /var/ossec/etc/rules" vertex="1">
+          <mxGeometry height="120" width="100" x="2112.5" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="rI9CLWDUfw0xqLQdfrcL-5" parent="1" style="html=1;points=[[0,0,0,0,5],[0,1,0,0,-5],[1,0,0,0,5],[1,1,0,0,-5]];perimeter=orthogonalPerimeter;outlineConnect=0;targetShapes=umlLifeline;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;sequenceEdgeStyle&quot;,&quot;libavoidRouting&quot;:0,&quot;curved&quot;:0,&quot;rounded&quot;:0};fillColor=#D30000;" value="" vertex="1">
+          <mxGeometry height="195" width="10" x="2157.5" y="455" as="geometry" />
+        </mxCell>
+        <mxCell id="rI9CLWDUfw0xqLQdfrcL-6" parent="1" style="html=1;whiteSpace=wrap;" value="&lt;div&gt;Reglas predefinidas en:&lt;/div&gt;&lt;div&gt;/var/ossec/ruleset/rules&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Reglas personalizadas en:&lt;/div&gt;&lt;div&gt;/var/ossec/etc/rules&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Por medio del message-id y el message, wazuh identifica que debe aplicar la regla de juniper, por ejemplo&lt;/div&gt;" vertex="1">
+          <mxGeometry height="140" width="228" x="2058" y="1180" as="geometry" />
+        </mxCell>
+        <mxCell id="jTOB9x2qS8BhaBHnDT-f-2" edge="1" parent="1" source="rI9CLWDUfw0xqLQdfrcL-3" style="endArrow=classic;dashed=1;html=1;rounded=0;defaultLabelBackgroundColor=page;exitX=0.5;exitY=0;exitDx=0;exitDy=0;endFill=1;entryX=0;entryY=1;entryDx=0;entryDy=-5;entryPerimeter=0;" target="rI9CLWDUfw0xqLQdfrcL-1" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="2350" y="670" as="sourcePoint" />
+            <mxPoint x="2000" y="800" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="jTOB9x2qS8BhaBHnDT-f-3" edge="1" parent="1" source="rI9CLWDUfw0xqLQdfrcL-6" style="endArrow=none;dashed=1;html=1;rounded=0;defaultLabelBackgroundColor=page;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=1;entryDx=0;entryDy=-5;entryPerimeter=0;" target="rI9CLWDUfw0xqLQdfrcL-5" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="2390" y="1070" as="sourcePoint" />
+            <mxPoint x="2390" y="850" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="jTOB9x2qS8BhaBHnDT-f-4" parent="1" style="html=1;whiteSpace=wrap;" value="Script que envia la informacion a Zabbix por medio de Zabbix Sender&lt;br&gt;&lt;br&gt;/var/ossec/integrations/custom-zabbix" vertex="1">
+          <mxGeometry height="140" width="228" x="2448" y="1185" as="geometry" />
+        </mxCell>
+        <mxCell id="jTOB9x2qS8BhaBHnDT-f-5" edge="1" parent="1" source="rI9CLWDUfw0xqLQdfrcL-1" style="endArrow=classic;html=1;rounded=0;defaultLabelBackgroundColor=page;" target="rI9CLWDUfw0xqLQdfrcL-5" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="2430" y="600" as="sourcePoint" />
+            <mxPoint x="2480" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="jTOB9x2qS8BhaBHnDT-f-9" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;defaultLabelBackgroundColor=page;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="2140" y="630" as="sourcePoint" />
+            <mxPoint x="1950" y="640" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="jTOB9x2qS8BhaBHnDT-f-10" edge="1" parent="1" source="e2yaPiPzw0CLVWs9AFY8-101" style="endArrow=classic;html=1;rounded=0;defaultLabelBackgroundColor=page;" target="e2yaPiPzw0CLVWs9AFY8-132" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="2850" y="700" as="sourcePoint" />
+            <mxPoint x="2900" y="650" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="jTOB9x2qS8BhaBHnDT-f-11" edge="1" parent="1" source="e2yaPiPzw0CLVWs9AFY8-101" style="endArrow=classic;html=1;rounded=0;defaultLabelBackgroundColor=page;entryX=0;entryY=1;entryDx=0;entryDy=-5;entryPerimeter=0;" target="DecaSVhjXEhOWjryw2Nf-13" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="2780" y="590" />
+              <mxPoint x="2780" y="800" />
+            </Array>
+            <mxPoint x="2590" y="640" as="sourcePoint" />
+            <mxPoint x="2640" y="590" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

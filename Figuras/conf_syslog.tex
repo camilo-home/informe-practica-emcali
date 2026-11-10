@@ -3,19 +3,26 @@
 
     \begin{forest}
         for tree={
+            folder,
             grow'=0,
             %draw,
             align=left,
             anchor=west,
+            base=left,
             %edge={-latex},
-            parent anchor=east,
+            parent anchor=south,
             child anchor=west,
             l sep=60pt,
-            s sep=5pt,
-            text height=1.5ex,
+            s sep=6pt,
+            text height=1ex,
             text depth=0.25ex,
             font=\ttfamily\footnotesize
-        }
+            %={
+      %\noexpand\path[\forestoption{edge}] 
+        %(!u.parent anchor) -| (.child anchor) 
+      %\forestoption{edge label};
+        %}
+        },
         [,phantom
         [/etc/syslog-ng/
             [syslog-ng.conf]
@@ -39,15 +46,6 @@
                 [edge\_routers.list]
                 [bras.list]
             ]
-        ]
-        [/data/var/log/
-            [boot.log]
-            [huawei\_sw.log]
-            [juniper\_er.log]
-            [juniper\_bras.log]
-            [syslog.log]
-            [kern]
-            [secure]
         ]
         ]
     \end{forest}
