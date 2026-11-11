@@ -177,10 +177,408 @@ filter f_bras {
 La carpeta \texttt{"Parsers"} contiene los archivos de configuracion que definen los analizadores de sintaxis diseñados para extraer los campos deseados de los log de diferentes fabricantes. Una vez los campos han sido extraidos y procesados, se usan las plantillas definidas en la carpeta \texttt{"Templates"} para formatear los registros en JSON y asi tener una estructura homogenea que pueda ser procesada por el Wazuh manager.
 
 \subsection{Huawei}
-PENDIENTE
+
+\subsubsection{Arquitectura del Pipeline de Extracción}
+Para procesar los eventos generados por los switches Huawei (modelos S12000 y S7700), se implementó una cadena de procesamiento secuencial compuesta por cuatro parsers concéntricos y una plantilla de normalización JSON en \texttt{syslog-ng}. Esta arquitectura fragmenta la complejidad de la sintaxis del fabricante en etapas atómicas, optimizando el uso de CPU al evitar expresiones regulares globales sobre tramas completas.
+
+\subsubsection{Definición de Parsers en \texttt{syslog-ng.conf}}
+
+\begin{lstlisting}[
+    language=bash,
+    caption={Parsers de extracción para registros de switches Huawei},
+    label={lst:parsers_huawei},
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{teal},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=single
+]
+# 1. EXTRACCION CAMPOS DEL PROGRAM: module_name/vendor_severity/brief
+parser p_huawei_program {
+    csv-parser(
+        columns(
+            "module_name",
+            "vendor_severity",
+            "brief"
+        )
+        delimiters("/")
+        template("${PROGRAM}")
+        flags(escape-none)
+    );
+};
+
+# 2. EXTRACCION OID DEL CAMPO MESSAGE
+parser p_huawei_oid {
+    regexp-parser(
+        template("${MSG}")
+        patterns(
+            "^OID\\s+(?<oid>[0-9.]+)(?::)?\\s*(?<msg_tmp>.*)$",
+            "^(?<msg_tmp>.*)$"
+        )
+    );
+};
+
+# 3. EXTRACCION MESSAGE Y KVDATA
+parser p_huawei_message {
+    regexp-parser(
+        template("${msg_tmp}")
+        patterns(
+            "^(?<message>.*?)\\s*\\((?<kvdata>.*)\\)$",
+            "^(?<message>.*)$"
+        )
+    );
+};
+
+# 4. EXTRACCION KV PAIRS
+parser p_huawei_kv {
+    kv-parser(
+        template("${kvdata}")
+        pair-separator(",")
+        value-separator("=")
+        prefix("kv.")
+        extract-stray-words-into("extra")
+    );
+};
+\end{lstlisting}
+
+\subsubsection{Desglose Técnico de los Componentes}
+
+\begin{description}
+    \item[\texttt{p\_huawei\_program}:] Procesa el encabezado delimitado \texttt{MODULE/SEVERITY/BRIEF} (ej. \texttt{IFPD/4/IF\_STATE}). El uso de \texttt{csv-parser} con delimitador \texttt{/} sobre la macro \texttt{\${PROGRAM}} permite aislar los metadatos propios del fabricante con un consumo de recursos sensiblemente menor al de un motor regex.
+    
+    \item[\texttt{p\_huawei\_oid}:] Normaliza tramas provenientes de conversión SNMP Trap-to-Syslog. Utiliza una evaluación multinivel: si la trama inicia con \texttt{OID <identificador>}, extrae el valor OID en la macro \texttt{\${oid}} y almacena la carga útil en \texttt{\${msg\_tmp}}; en caso contrario, transfiere el mensaje íntegro sin alterar la estructura.
+    
+    \item[\texttt{p\_huawei\_message}:] Separa la descripción en lenguaje natural del conjunto de parámetros estructurados. Mediante una expresión no codiciosa, captura el texto principal en la macro \texttt{\${message}} y extrae la cadena interna entre paréntesis en \texttt{\${kvdata}}.
+    
+    \item[\texttt{p\_huawei\_kv}:] Transforma dinámicamente el contenido de \texttt{\${kvdata}} en pares clave-valor indexables. La directiva \texttt{prefix("kv.")} asigna un espacio de nombres aislado para evitar colisiones con variables globales del sistema, mientras que \texttt{extract-stray-words-into("extra")} resguarda atributos no formateados.
+\end{description}
+
+\subsubsection{Plantilla de Normalización a Formato JSON}
+
+La plantilla \texttt{t\_huawei\_sw} unifica las macros del sistema y las variables de negocio extraídas en un esquema JSON compacto, omitiendo claves nulas o no presentes en el evento.
+
+\begin{lstlisting}[
+    language=bash,
+    caption={Plantilla de salida JSON estructurada para Huawei},
+    label={lst:template_huawei},
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{teal},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=single
+]
+template t_huawei_sw {
+    template(
+        "$(format-json --omit-empty-values
+
+        priority=${PRI}/${BSDTAG}
+        facility=${FACILITY_NUM}/${FACILITY}
+        severity=${LEVEL_NUM}/${LEVEL}
+
+        timestamp=${DATE}
+        host=${HOST}
+        source_ip=${SOURCEIP}
+
+        message=${message}
+        oid=${oid}
+        full_message=${MSG}
+
+        module_name=${module_name}
+        vendor_severity=${vendor_severity}
+        brief=${brief}
+
+        index=${kv.Index}
+        entity_physical_index=${kv.EntityPhysicalIndex}
+        interface_name=${kv.PhysicalName}${kv.Interface}${kv.InterfaceName}
+        entity_trap_fault_id=${kv.EntityTrapFaultID}
+        statistics=${kv.Statistics}
+        log_threshold=${kv.LogThreshold}
+        log_interval=${kv.LogInterval}
+        slot=${kv.Slot}
+        lsdb_area_id=${kv.LsdbAreaId}
+        lsdb_type=${kv.LsdbType}
+        lsdb_router_id=${kv.LsdbRouterId}
+        lsdb_lsid=${kv.LsdbLsid}
+        process_id=${kv.ProcessId}
+        router_id=${kv.RouterId}
+        instance_name=${kv.InstanceName}
+        slot_id=${kv.SlotID}
+        unit_id=${kv.UnitID}
+        port_id=${kv.PortID}
+        peer_slot_id=${kv.PeerSlotID}
+        discard_number=${kv.DiscardNumber}
+        threshold=${kv.Threshold}
+        interval=${kv.Interval}
+        admin_status=${kv.AdminStatus}
+        oper_status=${kv.OperStatus}
+        vsi_name=${kv.VsiName}
+        pw_id=${kv.PwId}
+        remote_ip=${kv.RemoteIp}
+        pw_type=${kv.PwType}
+        )\n"
+    );
+};
+\end{lstlisting}
+
+\subsubsection{Ejemplo de Transformación de Evento}
+
+A continuación se ilustra el procesamiento completo desde la recepción de la trama Syslog en estado crudo (\textit{RAW}) hasta su serialización JSON final.
+
+\begin{description}
+    \item[Registro RAW recibido:] ~\\
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize,frame=single, breaklines=true, breakatwhitespace=false,breakindent=10ptxleftmargin=0em, xrightmargin=0em]
+<189>Nov  4 10:15:30 Core-SW-01 %%01IFPD/4/IF_STATE(l)[0]: OID 1.3.6.1.4.1.2011.5.25.41.1.1: Physical status of the port changed. (PhysicalName=GigabitEthernet1/0/12, AdminStatus=UP, OperStatus=DOWN)
+\end{lstlisting}
+
+    \item[Objeto JSON generado:]~\\
+\begin{lstlisting}[language=json,basicstyle=\ttfamily\footnotesize,frame=single]
+{
+  "priority": "189/local7.notice",
+  "facility": "23/local7",
+  "severity": "5/notice",
+  "timestamp": "Nov  4 10:15:30",
+  "host": "Core-SW-01",
+  "message": "Physical status of the port changed.",
+  "oid": "1.3.6.1.4.1.2011.5.25.41.1.1",
+  "full_message": "OID 1.3.6.1.4.1.2011.5.25.41.1.1: Physical status of the port changed. (PhysicalName=GigabitEthernet1/0/12, AdminStatus=UP, OperStatus=DOWN)",
+  "module_name": "IFPD",
+  "vendor_severity": "4",
+  "brief": "IF_STATE",
+  "interface_name": "GigabitEthernet1/0/12",
+  "admin_status": "UP",
+  "oper_status": "DOWN"
+}
+\end{lstlisting}
+\end{description}
+
+\subsubsection{Integración en la Ruta de Registros (\textit{Log Path})}
+
+Para garantizar la ejecución en cascada de los parsers antes de la escritura en disco o reenvío al SIEM, el bloque \texttt{log} en \texttt{syslog-ng.conf} debe mantener el siguiente orden estricto:
+
+\begin{lstlisting}[
+    language=bash,
+    caption={Enrutamiento de eventos Huawei en syslog-ng.conf},
+    label={lst:logpath_huawei},
+    basicstyle=\ttfamily\footnotesize,
+    frame=single
+]
+log {
+    source(s_net_huawei);
+    parser(p_huawei_program);
+    parser(p_huawei_oid);
+    parser(p_huawei_message);
+    parser(p_huawei_kv);
+    destination(d_huawei_json);
+};
+\end{lstlisting}
 
 \subsection{Juniper}
-PENDIENTE
+\subsubsection{Arquitectura del Pipeline de Extracción Junos}
+A diferencia de las tramas propietarias de Huawei, los equipos Juniper (modelos MX480 y MX960) que ejecutan JunOS emplean la estructura estandarizada **RFC 5424** para Syslog, introduciendo el bloque de datos estructurados (\textit{Structured Data} o \texttt{SDATA}). 
+
+Para procesar estas tramas en \texttt{syslog-ng}, se diseñó una estrategia eficiente de dos etapas: aislamiento del bloque \texttt{SDATA} mediante expresiones regulares y posterior desempaquetado de pares clave-valor (\textit{Key-Value}) para serializar el resultado en JSON.
+
+\subsubsection{Definición de Parsers en \texttt{syslog-ng.conf}}
+
+\begin{lstlisting}[
+    language=bash,
+    caption={Parsers para extracción de Structured Data en Juniper JunOS},
+    label={lst:parsers_juniper},
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{teal},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    breakatwhitespace=false,
+    frame=single
+]
+# 1. PARSER EXTRACTOR DEL KV DATA (DESDE SDATA)
+parser p_junos_kvdata {
+    regexp-parser(
+        template("${SDATA}")
+        patterns('^\[[^ ]+\s+(?<KVDATA>.*)\]$')
+    );
+};
+
+# 2. PARSER EXTRACTOR DE PAREJAS CLAVE-VALOR
+parser p_junos_kv {
+    kv-parser(
+        template("${KVDATA}")
+        pair-separator(" ")
+        value-separator("=")
+        prefix("kv.")
+    );
+};
+\end{lstlisting}
+
+\subsubsection{Desglose Técnico de los Componentes}
+
+\begin{description}
+    \item[\texttt{p\_junos\_kvdata}:] Captura el contenido útil encerrado entre los corchetes del atributo de datos estructurados \texttt{\${SDATA}} de RFC 5424 (ej. \texttt{[junos@2636.1... username={34}admin{34} command={34}commit{34}]}). Descarta el identificador del esquema empresarial y almacena la secuencia de parámetros en la macro temporal \texttt{\${KVDATA}}.
+    
+    \item[\texttt{p\_junos\_kv}:] Interpreta la cadena \texttt{\$\{KVDATA\}} delimitada por espacios (\texttt{pair-separator(\symbol{34}\ \symbol{34})}) y asignaciones por signo igual (\texttt{value-separator(\symbol{34}=\symbol{34})}). Asigna a cada variable extraída el prefijo \texttt{kv.} (ej. \texttt{kv.username}, \texttt{kv.command}) para su mapeo directo en la plantilla JSON.
+\end{description}
+
+\subsubsection{Plantilla de Normalización a Formato JSON}
+
+La plantilla \texttt{t\_juniper\_mx\_21\_2} integra tanto las macros nativas de RFC 5424 (\texttt{\${ISODATE}}, \texttt{\${MSGID}}, \texttt{\${PID}}) como las variables dinámicas de auditoría extraídas de JunOS.
+
+\begin{lstlisting}[
+    language=bash,
+    caption={Plantilla JSON estructurada para JunOS (Juniper MX Series)},
+    label={lst:template_juniper},
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{teal},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    breakatwhitespace=false,
+    frame=single
+]
+template t_juniper_mx_21_2 {
+    template(
+        "$(format-json --omit-empty-values
+
+        priority='${PRI}/${BSDTAG}'
+        facility='${FACILITY_NUM}/${FACILITY}'
+        severity='${LEVEL_NUM}/${LEVEL}'
+
+        timestamp=${ISODATE}
+        host=${HOST}
+        source_ip=${SOURCEIP}
+        process_name=${PROGRAM}
+        process_id=${PID}
+        message_id=${MSGID}
+        message=${MESSAGE}
+
+        username=${kv.username}
+        command=${kv.command}
+        authentication_level=${kv.authentication-level}
+        class_name=${kv.class-name}
+        local_peer=${kv.local-peer}
+        pid=${kv.pid}
+        ssh_connection=${kv.ssh-connection}
+        client_mode=${kv.client-mode}
+        function_name=${kv.function-name}
+        sd_message=${kv.message}
+        source_address=${kv.source-address}
+        destination_address=${kv.destination-address}
+        index1=${kv.index1}
+        peer_name=${kv.peer-name}
+        old_state=${kv.old-state}
+        new_state=${kv.new-state}
+        event_type=${kv.event-type}
+        instance=${kv.instance}
+        error_message=${kv.error-message}
+        error_code=${kv.error-code}
+        filename=${kv.filename}
+        directory_name=${kv.directory-name}
+        internal_protocol=${kv.internal-protocol}
+        client_name=${kv.client-name}
+        unit_id=${kv.unit-id}
+        protocol_name=${kv.protocol-name}
+        source_name=${kv.source-name}
+        repeat_count=${kv.repeat-count}
+        time_first_detected=${kv.time-first-detected}
+        time_last_detected=${kv.time-last-detected}
+        max_arrival_rate=${kv.max-arrival-rate}
+        reason=${kv.reason}
+        temperature=${kv.temperature}
+        )\n"
+    );
+};
+\end{lstlisting}
+
+\begin{quote}
+\textbf{Nota de corrección técnica:} En la plantilla se corrigió la sintaxis de los atributos \texttt{protocol\_name} y \texttt{source\_name} sustituyendo el prefijo erróneo \texttt{nv.} por el namespace activo \texttt{kv.}, y se depuró la duplicidad del atributo \texttt{function\_name}.
+\end{quote}
+
+\subsubsection{Ejemplo de Transformación de Evento}
+
+A continuación se presenta un caso de auditoría de comando de usuario en un router Edge Juniper MX480:
+
+\begin{description}
+    \item[Registro RAW RFC 5424 recibido:] ~\\
+\begin{lstlisting}[
+    basicstyle=\ttfamily\scriptsize,
+    frame=single,
+    breaklines=true,
+    breakatwhitespace=false,
+    xleftmargin=0em,
+    xrightmargin=0em,
+    postbreak=\mbox{\textcolor{gray}{$\hookrightarrow$}\ }
+]
+<134>1 2026-11-04T14:20:10.123Z Edge-MX480-01 UI_COMMIT_COMPLETED 1243 - [junos@2636.1.1.1.2.57 username="admin" command="commit" authentication-level="Super-User"] Commit completed successfully
+\end{lstlisting}
+
+    \item[Objeto JSON generado:] ~\\
+\begin{lstlisting}[
+    language=json,
+    basicstyle=\ttfamily\scriptsize,
+    frame=single,
+    breaklines=true,
+    breakatwhitespace=false,
+    xleftmargin=0em,
+    xrightmargin=0em,
+    postbreak=\mbox{\textcolor{gray}{$\hookrightarrow$}\ }
+]
+{
+  "priority": "134/user.notice",
+  "facility": "16/local0",
+  "severity": "6/info",
+  "timestamp": "2026-11-04T14:20:10.123Z",
+  "host": "Edge-MX480-01",
+  "process_name": "UI_COMMIT_COMPLETED",
+  "process_id": "1243",
+  "message": "Commit completed successfully",
+  "username": "admin",
+  "command": "commit",
+  "authentication_level": "Super-User"
+}
+\end{lstlisting}
+\end{description}
+
+\subsubsection{Integración en la Ruta de Registros (\textit{Log Path})}
+
+Para procesar los eventos de los routers Juniper MX480 y BRAS MX960, se vincula la fuente de red con los dos parsers y la plantilla JSON en el archivo \texttt{syslog-ng.conf}:
+
+\begin{lstlisting}[
+    language=bash,
+    caption={Regla de enrutamiento para eventos Juniper en syslog-ng.conf},
+    label={lst:logpath_juniper},
+    basicstyle=\ttfamily\footnotesize,
+    frame=single,
+    breaklines=true
+]
+log {
+    source(s_net_juniper);
+    parser(p_junos_kvdata);
+    parser(p_junos_kv);
+    destination(d_juniper_json);
+};
+\end{lstlisting}
 
 \section{Rotación, compresión y retención de logs}
 La gestión de almacenamiento, compresión y ciclo de vida de los logs almacenados por syslog-ng en el sistema se maneja a través de la herramienta del sistema operativo llamada logrotate. Dado que los dispositivos de red envían miles de eventos diarios, los archivos de texto plano crecerían indefinidamente hasta saturar el disco si no se implementan estas políticas de retencion.
@@ -245,20 +643,357 @@ Para cada archivo de log, se establecen atributos que definen las directivas de 
 Cuando se cumple el horario de ejecución, systemd despierta a logrotate.service, el cual revisa los archivos, evalúa si cumplen las reglas de tamaño o tiempo y ejecuta el proceso de rotación, compresión y retención, para luego, finalizar inmediatamente su proceso.
 
 \section{Forwarding de logs en JSON hacia Wazuh}
-PENDIENTE
+
+\subsection{Arquitectura de Integración syslog-ng con Wazuh}
+Una vez que las tramas Syslog entrantes de los dispositivos de red (Switches Huawei y Routers Juniper) son capturadas, parseadas y estructuradas en formato JSON por \texttt{syslog-ng}, se reenvían en tiempo real hacia el motor de análisis de Wazuh Manager (\texttt{wazuh-remoted}). Este esquema desacopla la recepción masiva de la red respecto a la lógica de detección de amenazas e indexación.\subsection{Configuración de Destinos en \texttt{syslog-ng.conf}}En \texttt{syslog-ng}, se definen bloques de destino de tipo \texttt{network} que apuntan a la dirección IP del servidor Wazuh Manager (\texttt{10.27.27.198}) utilizando el puerto estándar UDP/514 y aplicando las plantillas de serialización construidas previamente.\begin{lstlisting}[
+language=bash,
+caption={Destinos en syslog-ng para reenvío de logs normalizados en JSON},
+label={lst:syslogng_destinations_wazuh},
+basicstyle=\ttfamily\footnotesize,
+keywordstyle=\color{blue}\bfseries,
+commentstyle=\color{gray}\itshape,
+stringstyle=\color{teal},
+numbers=left,
+numberstyle=\tiny\color{gray},
+stepnumber=1,
+numbersep=8pt,
+showstringspaces=false,
+breaklines=true,
+breakatwhitespace=false,
+frame=single
+]
+destination d_wazuh_huawei {
+    network(
+        "10.27.27.198"
+        transport("udp")
+        port(514)
+        template(t_huawei_sw)
+        persist-name("d_wazuh_huawei")
+    );
+};
+
+destination d_wazuh_juniper {
+    network(
+    "10.27.27.198"
+        transport("udp")
+        port(514)
+        template(t_juniper_mx_21_2)
+        persist-name("d_wazuh_juniper")
+    );
+};
+\end{lstlisting}
+
+\subsubsection{Desglose Técnico de Parámetros de \texttt{syslog-ng}}
+
+\begin{description}
+
+\item[\texttt{network("10.27.27.198" transport("udp") port(514))}:] Establece el socket de transporte vía datagramas UDP hacia la interfaz del recolector Wazuh. El uso de UDP maximiza el rendimiento y minimiza la latencia en la transmisión interna entre el concentrador de logs y el SIEM.
+\item[\texttt{template(t\_...)}:] Aplica la transformación JSON en el momento del envío. En lugar de transmitir el mensaje Syslog crudo, \texttt{syslog-ng} serializa los campos extraídos (\texttt{module\_name}, \texttt{interface\_name}, \texttt{username}, \texttt{command}, etc.) en un objeto JSON único, permitiendo que el decodificador nativo de Wazuh (\texttt{json}) parsee automáticamente todas las variables sin reglas de expresiones regulares complejas.
+\item[\texttt{persist-name("...")}:] Asigna un identificador único y persistente al estado del controlador de red en la base de datos interna de \texttt{syslog-ng} (\texttt{syslog-ng.persist}). Previene la duplicación de datos o la desincronización de punteros de memoria en caso de reinicio del servicio.
+\end{description}
+
+\subsection{Configuración del Receptor Syslog en Wazuh (\texttt{ossec.conf})}
+
+En el servidor Wazuh Manager, el servicio \texttt{wazuh-remoted} se configura para escuchar paquetes Syslog entrantes mediante el bloque \texttt{} en el archivo \texttt{/var/ossec/etc/ossec.conf}.
+
+\begin{lstlisting}[
+language=xml,
+caption={Receptor de eventos Syslog remoto en ossec.conf},
+label={lst:wazuh_remote_config},
+basicstyle=\ttfamily\footnotesize,
+keywordstyle=\color{blue}\bfseries,
+commentstyle=\color{gray}\itshape,
+stringstyle=\color{teal},
+numbers=left,
+numberstyle=\tiny\color{gray},
+stepnumber=1,
+numbersep=8pt,
+showstringspaces=false,
+breaklines=true,
+breakatwhitespace=false,
+frame=single
+]
+<ossec_config>
+    <remote>
+        <connection>syslog</connection>
+        <port>514</port>
+        <protocol>udp</protocol>
+        <allowed-ips>
+            <ip>10.29.10.75</ip>
+            <ip>10.27.27.198</ip>
+        </allowed-ips>
+    </remote>
+</ossec_config>
+\end{lstlisting}
+
+\subsubsection{Desglose Técnico del Bloque \texttt{}}
+
+\begin{description}
+\item[\texttt{syslog}:] Instruye a \texttt{wazuh-remoted} para operar como un receptor Syslog abierto (a diferencia del protocolo encriptado y autenticado que utilizan los agentes nativos de Wazuh en el puerto 1514/TCP).
+\item[\texttt{<port>514</port>} y \texttt{<protocol>udp</protocol>}:] Abre el socket de escucha en el puerto 514/UDP en la interfaz de red del Manager.
+\item[\texttt{<allowed-ips>}:] Implementa un mecanismo de seguridad en la capa de aplicación (Filtro ACL):
+\begin{itemize}
+    \item \texttt{10.29.10.75}: Dirección IP del servidor concentrador \texttt{syslog-ng}.
+    \item \texttt{10.27.27.198}: Dirección IP del propio servidor para testeo con inyección manual de logs.
+\end{itemize}
+Cualquier trama Syslog entrante cuya IP de origen no coincida con los bloques \texttt{<allowed-ips>} es descartada silenciosamente por el demonio, lo que previene la inyección de eventos no autorizados en el SIEM.
+\end{description}
+
+
 
 \section{Enrolamiento de agentes}
-PENDIENTE
 
-\section{Establecimiento de las reglas de correlacion y alertas de Wazuh}
-PENDIENTE
-\subsection{Mejora y ajuste constante}
-PENDIENTE
+El enrolamiento es la fase crítica de aprovisionamiento mediante la cual un nodo cliente (\textit{endpoint}) establece una relación de confianza cifrada con el \textit{Wazuh Manager}. Durante este proceso, el \textit{Manager} genera una clave simétrica única (\textit{Shared Key}) basada en algoritmos AES/HMAC, la cual se almacena en el archivo binario protegido \texttt{/var/ossec/etc/client.keys}. Esta clave permite autenticar el origen del tráfico Syslog/JSON y cifrar la comunicación por el puerto \texttt{1514/TCP}.
 
-\section{Almacenamiento e ingesta en OpenSearch}
-PENDIENTE
-\subsection{Índices y documentos}
-PENDIENTE
+\subsection{Métodos de enrolamiento de agentes Wazuh}
+
+\subsubsection{Enrolamiento automático en tiempo real:}
+El demonio \texttt{wazuh-authd} escucha en el puerto \texttt{1515/TCP} del \textit{Manager}. El agente inicia una negociación TLS enviando sus metadatos (Nombre de host, dirección IP y grupo). El \textit{Manager} valida la solicitud (pudiendo exigir una contraseña precompartida o verificación de certificado X.509) y responde devolviendo la clave de cifrado de forma atómica.
+
+\subsubsection{Inyección de variables de entorno (Paquetización):}
+Este es el método utilizado por el instalador oficial del Wazuh Agent. Permite inyectar los parámetros de registro directamente durante el proceso de instalación del paquete(\texttt{.deb}, \texttt{.rpm}, \texttt{.msi}). Los scripts de post-instalación capturan las variables del entorno del sistema operativo (\texttt{WAZUH\_MANAGER}, \texttt{WAZUH\_AGENT\_NAME}, \texttt{WAZUH\_AGENT\_GROUP}) y ejecutan de forma transparente el cliente \texttt{agent-auth}.
+
+\begin{lstlisting}[
+language=xml,
+caption={Inyección de variables de entorno para enrolamiento automático en Linux},
+basicstyle=\ttfamily\footnotesize,
+keywordstyle=\color{blue}\bfseries,
+commentstyle=\color{gray}\itshape,
+stringstyle=\color{teal},
+numbers=left,
+numberstyle=\tiny\color{gray},
+stepnumber=1,
+numbersep=8pt,
+showstringspaces=false,
+breaklines=true,
+breakatwhitespace=false,
+frame=single
+]
+WAZUH_MANAGER="10.0.0.2" WAZUH_REGISTRATION_SERVER="10.0.0.2" WAZUH_REGISTRATION_PASSWORD="TopSecret" \
+WAZUH_AGENT_GROUP="my-group" apt-get install wazuh-agent
+\end{lstlisting}
+
+Para conocer mas variables de entorno y opciones de instalación, se puede consultar la documentación oficial de Wazuh para despliegue de agentes con variables de entorno: \url{https://documentation.wazuh.com/current/user-manual/agent/agent-enrollment/deployment-variables/deployment-variables-linux.html}.
+
+\subsubsection{Enrolamiento Manual fuera de línea (\texttt{manage\_agents}):}
+Método administrativo directo util en entornos con restricciones de red severas donde el puerto \texttt{1515/TCP} se encuentra bloqueado. Requiere la intervención en dos pasos: generación y extracción de la clave Base64 en la consola del \textit{Manager}, e importación manual dentro del archivo \texttt{client.keys} del agente.
+
+\begin{description}
+\item[Paso 1: Alta del Agente y Extracción de Clave (en el Wazuh Manager):] En la consola del servidor Manager, se ejecuta la herramienta interactiva \texttt{/var/ossec/bin/manage\_agents}, se selecciona la opción A (Add an agent) y se asigna un ID, Nombre e IP. Luego se extrae la clave con la opción E.
+\item[Paso 2: Importación de la Clave e Inicio del Servicio (en el Agente Endpoint):] Se ejecuta \texttt{/var/ossec/bin/manage\_agents}, se selecciona la opción I (Import key) y se pega la clave de 64 caracteres codificada en Base64. La entrada correspondiente se almacena en \texttt{/var/ossec/etc/client.keys}.
+\end{description}
+
+\subsubsection{Despliegue Masivo y Orquestación (GPO / Ansible):}
+Orientado al aprovisionamiento centralizado en infraestructuras empresariales. Utiliza directivas de grupo de Active Directory (\textit{GPO}) para sistemas Windows mediante comandos silenciosos del instalador MSI, o \textit{playbooks} de Ansible para la gestión del ciclo de vida en servidores Linux.
+
+\begin{lstlisting}[
+language=xml,
+caption={Despliegue masivo de agentes Wazuh en Windows mediante GPO},
+basicstyle=\ttfamily\footnotesize,
+keywordstyle=\color{blue}\bfseries,
+commentstyle=\color{gray}\itshape,
+stringstyle=\color{teal},
+numbers=left,
+numberstyle=\tiny\color{gray},
+stepnumber=1,
+numbersep=8pt,
+showstringspaces=false,
+breaklines=true,
+breakatwhitespace=false,
+frame=single
+]
+msiexec.exe /i wazuh-agent-4.x.msi /q WAZUH_MANAGER='10.27.27.198' WAZUH_REGISTRATION_SERVER='10.27.27.198' WAZUH_AGENT_NAME='%COMPUTERNAME%'
+\end{lstlisting}
+
+\subsection{Enrolamiento Asistido desde el Wazuh Dashboard (\textit{Deploy New Agent})}
+
+\subsubsection{Funcionamiento del Asistente Visual}
+El \textit{Wazuh Dashboard} incorpora un asistente gráfico interactivo ubicado en el menú \textbf{Agents Management} $\rightarrow$ \textbf{Deploy new agent}. Esta herramienta está orientada a simplificar el despliegue manual y reducir los errores de sintaxis en la configuración de nuevos nodos.
+
+El asistente guía al operador mediante un flujo de selección parametrizado:
+\begin{enumerate}
+    \item \textbf{Sistema Operativo y Arquitectura:} Selección de la plataforma destino (Debian/Ubuntu, RedHat/CentOS, Windows, macOS) y la arquitectura de hardware (\texttt{x86\_64}, \texttt{arm64}).
+    \item \textbf{Dirección del Manager:} Especificación de la IP o FQDN del \textit{Wazuh Manager} concentrador (ej. \texttt{10.27.27.198}).
+    \item \textbf{Asignación de Grupo e Identidad (Opcional):} Definición previa del grupo operativo (\textit{Agent Group}) y nombre personalizado del agente.
+\end{enumerate}
+
+\subsubsection{Generación Dinámica del Comando de Despliegue}
+Una vez seleccionados los parámetros, el Dashboard sintetiza la información y genera una instrucción monolítica para ser copiada y ejecutada directamente en la terminal de la máquina cliente.
+
+\begin{lstlisting}[
+    language=bash,
+    caption={Comando dinámico generado por el asistente para Linux Debian/Ubuntu},
+    label={lst:wazuh_dashboard_deploy_wizard},
+    basicstyle=\ttfamily\small,
+    frame=single,
+    breaklines=true,
+    breakatwhitespace=false,
+    xleftmargin=0em,
+    xrightmargin=0em,
+    postbreak=\mbox{\textcolor{gray}{$\hookrightarrow$}\ }
+]
+# Ejemplo de comando 'one-liner' generado para Ubuntu x86_64
+wget https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.9.0-1_amd64.deb && sudo WAZUH_MANAGER='10.27.27.198' WAZUH_AGENT_GROUP='Linux_Servers' WAZUH_AGENT_NAME='SRV-WEB-02' dpkg -i ./wazuh-agent_4.9.0-1_amd64.deb
+\end{lstlisting}
+
+\subsubsection{Integración con la Arquitectura de Registro}
+Es importante destacar que este método reutiliza la infraestructura de registro autenticado previamente detallada:
+\begin{itemize}
+    \item La ejecución del comando descarga el paquete oficial y pasa las variables globales en el mismo entorno de ejecución.
+    \item Los scripts de post-instalación de \texttt{dpkg}/\texttt{rpm} detectan las variables inyectadas y ejecutan silenciosamente la solicitud de enrolamiento contra el demonio \texttt{wazuh-authd} en el puerto \texttt{1515/TCP}.
+    \item Tras la generación de la clave cifrada en \texttt{client.keys}, el agente inicia su servicio y comienza el flujo continuo de alertas por el puerto \texttt{1514/TCP}.
+\end{itemize}
+
+\section{Creación y Personalización de Reglas en Wazuh}
+
+\subsection{Ubicación de Archivos de Reglas}
+El motor de correlación y análisis de Wazuh gestiona las reglas de detección separando las definiciones provistas por el fabricante de las adaptaciones locales del sistema:
+
+\begin{description}
+    \item[Reglas predefinidas (\textit{Presets}):] Almacenadas en el directorio \url{/var/ossec/ruleset/rules/}. Son mantenidas centralizadamente por el equipo de Wazuh y \textbf{no deben modificarse directamente}, ya que son sobrescritas automáticamente durante las actualizaciones del sistema.
+    
+    \item[Reglas personalizadas (\textit{Custom}):] Almacenadas en el directorio \url{/var/ossec/etc/rules/}. Es el directorio principal para la definición de nuevas reglas locales, para esto se deben estructurar archivos \texttt{.xml} adicionales dentro de dicha carpeta.
+\end{description}
+
+\subsection{Convenciones e Identificación de Reglas}
+
+Para garantizar la correcta carga y jerarquía de evaluación dentro del motor de análisis, se deben seguir tres directivas fundamentales:
+
+\begin{enumerate}
+    \item \textbf{Rango de identificadores (\texttt{rule id}):} Toda regla personalizada debe asignar un identificador único (\textit{ID}) contenido estrictamente en el intervalo \textbf{100000 a 119999}. Los IDs del 0 al 99999 están reservados de forma exclusiva para el conjunto de reglas nativas de Wazuh.
+    
+    \item \textbf{Convenio de archivos y grupos \texttt{local\_*}:} Las reglas personalizadas deben ser organizadas bajo la nomenclatura \texttt{local}. Ademas deben tener asignacion de grupos para filtrarse en OpenSearch (ejemplo: \texttt{<group name="security,huawei,network,">}) para asegurar el cumplimiento del flujo de evaluación.
+    
+    \item \textbf{Sobrescritura de reglas nativas (\texttt{overwrite="yes"}):} En caso de requerir la modificación de la severidad o el comportamiento de una regla por defecto del sistema, la regla debe ser redefinida en \texttt{local\_rules.xml} conservando el mismo \texttt{id} de origen e incluyendo explícitamente el atributo \texttt{overwrite\=yes}.
+\end{enumerate}
+
+\subsection{Ejemplo Mínimo en \texttt{local\_rules.xml}}
+
+A continuación se ilustra una regla personalizada orientada a generar una alerta de nivel 7 cuando una interfaz de red Huawei cambie a estado \texttt{DOWN}:
+
+\begin{lstlisting}[
+    language=xml,
+    caption={Ejemplo de regla personalizada en local\_rules.xml},
+    label={lst:local_rules_example},
+    frame=single,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{teal},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    breakatwhitespace=false,
+    xleftmargin=0em,
+    xrightmargin=0em,
+    postbreak=\mbox{\textcolor{gray}{$\hookrightarrow$}\ }
+]
+<group name="local,huawei,network,">
+  <!-- Regla personalizada utilizando el rango reservado (100000-119999) -->
+  <rule id="100001" level="7">
+    <field name="module_name">IFPD</field>
+    <field name="oper_status">DOWN</field>
+    <description>Huawei: La interfaz $(interface_name) ha cambiado a estado DOWN.</description>
+  </rule>
+</group>
+\end{lstlisting}
+
+\subsection{Caracterización de Reglas e Inventario de IDs (\texttt{rule\_mapper.py})}
+
+El script en Python \texttt{rule\_mapper.py} se almacena en el directorio \url{/var/ossec/etc} y realiza una auditoría automatizada sobre el conjunto total de reglas de Wazuh. Su objetivo principal es analizar la jerarquía de dependencias entre reglas y evaluar la disponibilidad de identificadores (\textit{IDs})[cite: 1].
+
+Escanea recursivamente los archivos de reglas nativas (\url{/var/ossec/ruleset/rules}) y personalizadas (\url{/var/ossec/etc/rules}) utilizando expresiones regulares para extraer las declaraciones de reglas (\texttt{<rule id="...">}) y sus relaciones de correlación (\texttt{<if\_sid>} e \texttt{<if\_matched\_sid>})[cite: 1].
+
+\subsection{Reportes Generados en \texttt{/var/ossec/mapper\_report/}}
+
+Los resultados del análisis se exportan en el directorio \url{/var/ossec/mapper_report/}, generando cinco archivos de informe estructurados:
+
+\begin{description}
+    \item[\texttt{free\_ranges.txt}:] ~\\
+    Identifica y lista los huecos o rangos continuos de IDs que se encuentran libres en la base de datos de reglas, permitiendo seleccionar identificadores disponibles para reglas personalizadas sin riesgo de colisión.
+
+    \item[\texttt{duplicate\_ids.txt}:] ~\\
+    Detecta y alerta sobre cualquier identificador de regla que se encuentre declarado de forma duplicada en más de un archivo \texttt{.xml}.
+
+    \item[\texttt{relations.txt}:] ~\\
+    Construye un mapa jerárquico visual de las dependencias padre-hijo entre reglas interconectadas.
+
+    \item[\texttt{rule\_ids.txt}:] ~\\
+    Lista la totalidad de los IDs asignados junto con la ruta absoluta del archivo \texttt{.xml} donde está definida cada regla.
+
+    \item[\texttt{statistics.txt}:] ~\\
+    Resume las métricas consolidadas del conjunto de reglas, incluyendo el total de reglas, IDs únicos, cantidad de correlaciones, el rango inferior/superior de IDs y la regla con mayor número de dependientes.
+\end{description}
+
+\subsection{Documentación Oficial de Referencia}
+
+Para una revisión detallada acerca de los atributos de filtrado (\texttt{if\_sid}, \texttt{field}, \texttt{match}, \texttt{regex}), opciones de correlación multievento y la sintaxis completa del motor de reglas, se recomienda consultar la guía oficial de Wazuh en:
+\url{https://documentation.wazuh.com/current/user-manual/ruleset/ruleset-xml-syntax/rules.html}
+
+
+\section{Ingesta, Almacenamiento y Funcionamiento de Índices en OpenSearch}
+
+\subsection{Flujo de Ingesta y Arquitectura de Almacenamiento}
+OpenSearch funciona como el motor de almacenamiento distribuido, búsqueda y analítica dentro de la arquitectura SIEM. En la canalización desplegada (\texttt{syslog-ng} $\rightarrow$ \textit{Wazuh Manager} $\rightarrow$ \textit{OpenSearch/Wazuh Indexer}), la ingesta de alertas procesadas hacia los nodos del clúster se realiza mediante su interfaz RESTful a través del puerto \texttt{9200/TCP}.
+
+\subsubsection{Mecanismos de Ingesta}
+\begin{description}
+    \item[Ingesta Masiva (\textit{Bulk API}):] Los componentes del concentrador envían los eventos serializados en bloques mediante solicitudes HTTP \texttt{POST /\_bulk}. Este agrupamiento minimiza la sobrecarga de conexiones TCP y maximiza la tasa de transferencia de datos (\textit{throughput}) en el almacenamiento.
+    
+    \item[\textit{Ingest Pipelines}:] Antes de escribir los documentos en disco, los nodos de ingesta de OpenSearch pueden ejecutar canalizaciones de preprocesamiento (\textit{Ingest Nodes}) para aplicar transformaciones adicionales en memoria, tales como geolocalización IP (\textit{GeoIP}), normalización de \textit{timestamps} o filtrado de atributos.
+\end{description}
+
+\subsection{Concepto y Estructura de Documentos JSON}
+Un \textbf{documento} es la unidad atómica de información en OpenSearch. Corresponde a un objeto semiestructurado en formato JSON que almacena todos los atributos extraídos del evento original (como los campos normalizados de Huawei y Juniper).
+
+\subsubsection{Estructura Interna y Metadatos}
+Cada documento almacenado incluye un conjunto de metadatos de control administrados automáticamente por el sistema (prefijados con guion bajo \texttt{\_}):
+
+\begin{description}
+    \item[\texttt{\_index}:] Identificador lógico del índice al que pertenece el documento.
+    \item[\texttt{\_id}:] Cadena única de identificación dentro del índice (generada automáticamente mediante un algoritmo hash UUID o asignada de forma explícita).
+    \item[\texttt{\_source}:] El objeto JSON primario entregado durante la ingesta. Constituye la fuente de verdad empleada por OpenSearch Dashboards para visualizar alertas y reconstruir índices.
+    \item[\texttt{\_version}:] Contador secuencial utilizado para el control de concurrencia optimista en modificaciones.
+\end{description}
+
+\subsection{Índices, \textit{Shards} y Motor de Búsqueda Lucene}
+
+Un \textbf{índice} es un contenedor lógico que agrupa documentos con características estructurales y esquemas de mapeo (\textit{mappings}) afines. En el SIEM, las alertas registradas por Wazuh se estructuran en índices temporales por fecha (por ejemplo: \texttt{wazuh-alerts-4.x-2026.11.11}).
+
+\subsubsection{Distribución Física: \textit{Shards} Primarios y Replicas}
+Para soportar escalabilidad horizontal y resistencia ante fallos de infraestructura, cada índice se segmenta internamente en unidades físicas llamadas \textbf{\textit{Shards}} (fragmentos):
+
+\begin{itemize}
+    \item \textbf{\textit{Primary Shards} (Fragmentos Primarios):} Al ingresar un documento, OpenSearch determina su asignación a un fragmento primario utilizando la fórmula de enrutamiento por hash:
+    \[
+    \text{shard} = \text{hash}(\text{\_id}) \pmod{\text{número\_de\_shards\_primarios}}
+    \]
+    \item \textbf{\textit{Replica Shards} (Fragmentos Réplica):} Son duplicados exactos de los fragmentos primarios alojados en nodos distintos dentro del clúster. Proveen tolerancia a fallos del hardware y aumentan la capacidad de atención a consultas de lectura en paralelo.
+\end{itemize}
+
+\subsubsection{Motor Interno y el Índice Invertido de Apache Lucene}
+Cada \textit{shard} físico es técnicamente una instancia independiente del motor de búsqueda **Apache Lucene**. Para realizar búsquedas de texto completo e indexación multivariable en milisegundos, Lucene organiza el texto plano mediante un \textbf{Índice Invertido} (\textit{Inverted Index}).
+
+A diferencia de un modelo relacional (que vincula registros con sus respectivos valores), el índice invertido construye una estructura de diccionario mapeando cada token o palabra clave individual hacia la lista de identificadores de los documentos donde aparece, junto con su frecuencia y posición exacta:
+
+\begin{table}[H]
+\centering
+\small
+\caption{Esquema conceptual de un índice invertido en Lucene}
+\label{tab:inverted_index_schema}
+\begin{tabular}{|p{0.25\textwidth}|p{0.30\textwidth}|p{0.30\textwidth}|}
+\hline
+\textbf{Término (Token)} & \textbf{ID de Documentos} & \textbf{Posición / Frecuencia} \\ \hline
+\texttt{IFPD} & Doc \#101, Doc \#105 & Doc 101 [Pos 3], Doc 105 [Pos 2] \\ \hline
+\texttt{DOWN} & Doc \#101, Doc \#102 & Doc 101 [Pos 8], Doc 102 [Pos 5] \\ \hline
+\texttt{commit} & Doc \#204 & Doc 204 [Pos 4] \\ \hline
+\end{tabular}
+\end{table}
+
+
 \subsection{Modificación del Pipeline de Ingesta para el Enrutamiento de Estadísticas}
 Con el objetivo de optimizar el rendimiento del clúster y evitar la saturación del índice principal de seguridad (\texttt{wazuh-alerts-*}), se implementó una estrategia de segregación de datos desde la capa de ingesta. Aquellas alertas generadas exclusivamente con fines estadísticos o de conteo continuo (como cantidad promedio de traps de temperatura o de sesiones PPPoE reseteadas), son desviadas automáticamente hacia un índice dedicado denominado \texttt{wazuh-hits-*}.
 
@@ -284,8 +1019,50 @@ A continuación, se presenta el fragmento JSON del procesador inyectado al final
 
 Es imperativo destacar que el motor de análisis de Wazuh (\texttt{wazuh-analysisd}) realiza la correlación de eventos (como cálculos de frecuencia y ventanas de tiempo) mediante un procesamiento de flujo en memoria RAM, de forma estrictamente unidireccional y en tiempo real. El motor no realiza consultas retrospectivas a los archivos locales de salida (\texttt{alerts.json}) ni ejecuta peticiones al motor de indexación de OpenSearch. Esta arquitectura desacoplada garantiza que las políticas de enrutamiento implementadas en los \textit{Ingest Pipelines} de OpenSearch (como la derivación de eventos estadísticos a \texttt{wazuh-hits-*}) operen exclusivamente en la capa de almacenamiento y visualización, sin interferir ni degradar las capacidades de detección de intrusiones y correlación lógica del nodo Manager.
 
-\section{Visualización y dashboards}
-PENDIENTE
+\section{Uso General y Creación de Dashboards en Wazuh}
+
+\subsection{Navegación e Interfaz Principal de Wazuh Dashboard}
+El \textit{Wazuh Dashboard} (basado en OpenSearch Dashboards) proporciona una interfaz web centralizada para la visualización de eventos de seguridad, auditoría e inventario de red. Su operación se fundamenta en tres pilares de interacción:
+
+\begin{description}
+    \item[Módulos de Dominio:] Accesibles desde el menú lateral superior (\textit{Menu} $\rightarrow$ \textit{Wazuh}). Incluyen las secciones dedicadas a \textbf{Security Events}, \textbf{Threat Hunting}, \textbf{Vulnerability Detection} e \textbf{Integrity Monitoring}.
+    
+    \item[Barra de Filtros y Búsqueda (WQL / DQL):] Ubicada en la parte superior. Permite realizar búsquedas mediante el lenguaje de consultas \textit{Wazuh Query Language} (WQL) o sintaxis Lucene. Permite filtrar eventos específicos utilizando atributos extraídos (por ejemplo: \texttt{rule.level >= 7} o \texttt{data.huawei.oper\_status: "DOWN"}).
+    
+    \item[Selector de Intervalo Temporal (\textit{Time Picker}):] Controla la ventana de tiempo de los datos mostrados (ej. \textit{Last 24 hours}, \textit{Last 7 days} o rangos absolutos).
+\end{description}
+
+\subsection{Procedimiento para la Creación de Dashboards Personalizados}
+
+La construcción de un panel visual centralizado se compone de dos etapas principales: la creación individual de visualizaciones y su ensamblaje dentro del lienzo del \textit{Dashboard}.
+
+\subsubsection{Paso 1: Creación de Visualizaciones (\textit{Visualizations})}
+\begin{enumerate}
+    \item Navegar a \textbf{Dashboard Management} $\rightarrow$ \textbf{Visualize} (o desde el menú lateral en \textbf{Visualize}).
+    \item Hacer clic en \textbf{Create visualization} y seleccionar el tipo de gráfico según el objetivo analítico:
+    \begin{itemize}
+        \item \textbf{Metric / Gauge:} Para métricas consolidadas (ej. Total de alertas de severidad crítica).
+        \item \textbf{Data Table:} Para listas estructuradas (ej. Top 10 IP origen o top usuarios con commits en Juniper).
+        \item \textbf{Vertical Bar / Area:} Para series de tiempo e histogramas de eventos por hora.
+        \item \textbf{Pie / Donut:} Para distribución porcentual (ej. Eventos divididos por proveedor: Huawei vs. Juniper).
+    \end{itemize}
+    \item Seleccionar el patrón de índice de datos (\textit{Index Pattern}): \texttt{wazuh-alerts-*}.
+    \item Configurar las agregaciones:
+    \begin{itemize}
+        \item \textbf{Metrics (Eje Y):} Seleccionar \texttt{Count} o métricas numéricas sobre atributos JSON (ej. \texttt{data.huawei.discard\_number}).
+        \item \textbf{Buckets (Eje X / Split Rows):} Seleccionar \texttt{Terms} e indicar el campo JSON correspondiente (ej. \texttt{data.huawei.interface\_name.keyword}).
+    \end{itemize}
+    \item Hacer clic en \textbf{Update} para renderizar la gráfica y luego en \textbf{Save} asignando un nombre identificativo.
+\end{enumerate}
+
+\subsubsection{Paso 2: Ensamblaje y Guardado del Dashboard}
+\begin{enumerate}
+    \item Navegar a la sección \textbf{Dashboards} en el menú principal y seleccionar \textbf{Create dashboard}.
+    \item Hacer clic en \textbf{Add an existing} (o \textbf{Add}) para desplegar el catálogo de visualizaciones previamente creadas.
+    \item Seleccionar los paneles creados en el Paso 1 para incorporarlos al lienzo.
+    \item Organizar la disposición visual ajustando el tamaño y posición de cada widget mediante arrastrar y soltar (\textit{drag \& drop}).
+    \item Guardar la vista general en \textbf{Save}, asignando un título claro (ejemplo: \texttt{Dashboard NOC - Infraestructura Huawei y Juniper}) y seleccionando si se desea almacenar la ventana de tiempo actual.
+\end{enumerate}
 
 \section{Gestión del almacenamiento de alertas y archivos en Wazuh}
 Por defecto, Wazuh almacena tanto los índices como los archivos de alertas de forma indefinida y no trae una política de borrado automático preconfigurada. Si no se define un límite manualmente, el sistema acumulará datos hasta llenar el disco por completo. La documentacion oficial de Wazuh recomienda establecer un periodo de retencion de 180 dias para los indices y 90 dias para los archivos de alertas, esto debido a que el motor de busqueda esta optimizado para almacenar grandes cantidades de datos y realizar busquedas rapidas, mientras que los archivos de texto plano son mas lentos y consumen mas recursos del sistema \cite{wazuh_index_lifecycle}.
@@ -531,19 +1308,19 @@ Componente final de ingesta de métricas y presentación de alertas operativas (
 El proceso de extremo a extremo para la captura, procesamiento y notificación de eventos sigue el orden cronológico detallado a continuación:
 
 \begin{enumerate}
-    \item \textbf{Generación y Transmisión del Log (Paso 1):}
+    \item \textbf{Generación y transmisión del Log (Paso 1):}
     Los demonios del router Juniper (\texttt{eventd} y \texttt{syslogd}) detectan un evento interno del chasis en \texttt{GUAB\_MX480\_01} (\texttt{10.29.13.25}) y emiten un registro Syslog estándar (RFC 5424/3164) a través del puerto \texttt{UDP:514} hacia la IP \texttt{10.29.10.75}.
 
-    \item \textbf{Procesamiento y Reenvío en \texttt{syslog-ng} (Paso 2):}
+    \item \textbf{Procesamiento y reenvío en \texttt{syslog-ng} (Paso 2):}
     El servicio \texttt{syslog-ng} en Ubuntu captura el paquete mediante su \texttt{source()}, aplica el \texttt{filter()} por IP de origen, procesa el texto con su \texttt{parser()}, le da estructura estructurada con su \texttt{template()} JSON y lo reenvía a través del puerto \texttt{514} hacia el servidor Wazuh (\texttt{10.27.27.198}).
 
-    \item \textbf{Recepción, Correlación y Alerta en Wazuh (Paso 3):}
+    \item \textbf{Recepción, correlación y alerta en Wazuh (Paso 3):}
     El sub-servicio \texttt{wazuh-remoted} recibe la traza JSON. Posteriormente, \texttt{wazuh-analysisd} procesa la información aplicando las reglas de correlación personalizadas contenidas en \texttt{local\_juniper.xml}. Al coincidir con una regla del grupo (ej. \texttt{temperature}), escribe la alerta resultante en \texttt{/var/ossec/logs/alerts/alerts.json}.
 
-    \item \textbf{Invocación de la Integración (Paso 4):}
+    \item \textbf{Invocación de la integración (Paso 4):}
     El demonio \texttt{wazuh-integratord} detecta la nueva alerta del grupo \texttt{temperature} e invoca automáticamente el script customizado localizado en \texttt{/var/ossec/integrations/custom-zabbix}. Registra cualquier novedad en \texttt{/var/ossec/logs/ossec.log}.
 
-    \item \textbf{Extracción, Formateo e Ingesta en Zabbix (Paso 5):}
+    \item \textbf{Extracción, formateo e ingesta en Zabbix (Paso 5):}
     El script ejecutable utiliza la herramienta \texttt{jq} para parsear los datos de \texttt{alerts.json}, construye los parámetros correspondientes y ejecuta la herramienta \texttt{zabbix\_sender} para inyectar la métrica de forma directa al escuchador \textbf{Zabbix Trapper} en la dirección IP \texttt{10.29.10.13}.
 \end{enumerate}
 

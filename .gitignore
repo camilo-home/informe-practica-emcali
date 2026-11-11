@@ -23,3 +23,5 @@
 
 # Directorios temporales
 .vscode/
+
+rule_mapper.py
