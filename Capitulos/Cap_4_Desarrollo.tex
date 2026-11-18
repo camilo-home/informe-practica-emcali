@@ -780,7 +780,7 @@ Método administrativo directo util en entornos con restricciones de red severas
 
 \begin{description}
 \item[Paso 1: Alta del Agente y Extracción de Clave (en el Wazuh Manager):] En la consola del servidor Manager, se ejecuta la herramienta interactiva \texttt{/var/ossec/bin/manage\_agents}, se selecciona la opción A (Add an agent) y se asigna un ID, Nombre e IP. Luego se extrae la clave con la opción E.
-\item[Paso 2: Importación de la Clave e Inicio del Servicio (en el Agente Endpoint):] Se ejecuta \texttt{/var/ossec/bin/manage\_agents}, se selecciona la opción I (Import key) y se pega la clave de 64 caracteres codificada en Base64. La entrada correspondiente se almacena en \texttt{/var/ossec/etc/client.keys}.
+\item[Paso 2: Importación de la Clave e Inicio del Servicio (en el Agente Endpoint):] Se ejecuta \textit{/var/ossec/bin/manage\_agents}, se selecciona la opción I (Import key) y se pega la clave de 64 caracteres codificada en Base64. La entrada correspondiente se almacena en \texttt{/var/ossec/etc/client.keys}.
 \end{description}
 
 \subsubsection{Despliegue Masivo y Orquestación (GPO / Ansible):}
